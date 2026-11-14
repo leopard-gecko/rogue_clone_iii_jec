@@ -1,0 +1,146 @@
+# Native Windows 10/11 (64-bit), MSYS2 UCRT64 + PDCursesMod.
+# Invoked automatically by the top-level Makefile in MSYS2 UCRT64.
+# Manual form: make -f Makefile.win
+CC = gcc
+MINGW_PREFIX ?= /ucrt64
+PDC_BACKEND ?= wincon
+WINDRES ?= windres
+PROG ?=
+PROGRAM ?= $(if $(PROG),$(PROG),rogue-clone)
+DEFAULT_LANGUAGE ?= 0
+DEFAULT_JUMP ?= 0
+DEFAULT_PASSGO ?= 1
+DEFAULT_COLOR ?= 1
+DEFAULT_CURSOR ?= 0
+ALLSCORES ?= 1
+FILEDIR ?=
+SAVEFILE ?=
+SCOREFILE ?=
+LOCKFILE ?=
+
+ifeq ($(PDC_BACKEND),vt)
+PDC_LIB := pdcurses_vt
+else ifeq ($(PDC_BACKEND),wincon)
+PDC_LIB := pdcurses_wincon
+else
+$(error PDC_BACKEND must be wincon or vt)
+endif
+
+# Windows-specific shorthand, like Rogue 5.4.5 JEC, resolves the *real*
+# Saved Games known folder, including folder redirection. Resolve only for
+# targets that build, not for 'clean'.  A distributable exe should instead
+# use the default, unset FILEDIR (which follows its working directory).
+ifeq ($(strip $(FILEDIR)),saved-games)
+ifneq ($(filter-out clean dist.src distclean,$(if $(strip $(MAKECMDGOALS)),$(MAKECMDGOALS),all)),)
+SAVED_GAMES_FILEDIR := $(shell powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./windows/windows-saved-games.ps1)
+ifeq ($(strip $(SAVED_GAMES_FILEDIR)),)
+$(error Cannot resolve Windows Saved Games directory)
+endif
+RESOLVED_FILEDIR := $(SAVED_GAMES_FILEDIR)
+AUTO_PREPARE_FILEDIR := 1
+endif
+else
+RESOLVED_FILEDIR := $(FILEDIR)
+endif
+
+ifneq ($(strip $(RESOLVED_FILEDIR)),)
+ifeq ($(strip $(SAVEFILE)),)
+SAVEFILE := $(RESOLVED_FILEDIR)/$(PROGRAM).save
+endif
+ifeq ($(strip $(SCOREFILE)),)
+SCOREFILE := $(RESOLVED_FILEDIR)/$(PROGRAM).scores
+endif
+ifeq ($(strip $(LOCKFILE)),)
+LOCKFILE := $(RESOLVED_FILEDIR)/$(PROGRAM).lock
+endif
+else
+ifeq ($(strip $(SAVEFILE)),)
+SAVEFILE := $(PROGRAM).save
+endif
+ifeq ($(strip $(SCOREFILE)),)
+SCOREFILE := $(PROGRAM).scores
+endif
+ifeq ($(strip $(LOCKFILE)),)
+LOCKFILE := $(PROGRAM).lock
+endif
+endif
+
+SOURCES := jec/color.c hit.c init.c inventory.c jec/language.c level.c windows/machdep_win.c windows/rogue_windows.c windows/rogue_windows_console.c \
+           main.c message.c monster.c move.c object.c pack.c play.c random.c \
+           ring.c room.c jec/unicode_text.c save.c score.c spec_hit.c throw.c trap.c use.c zap.c
+OBJS := $(SOURCES:.c=.win.o)
+ICON_RC := windows/rogue-icon.rc
+ICON_ICO := windows/rogue-clone-iii.ico
+ICON_OBJ := windows/rogue-icon.win.o
+CFLAGS ?= -std=gnu89 -O2 -Wall -Wextra
+LDFLAGS ?=
+# Quote make values as shell single-quoted C string literals, preserving
+# spaces and most special characters in FILEDIR or PROGRAM.
+shell_quote = '$(subst ','"'"',$(1))'
+USER_CPPFLAGS := $(CPPFLAGS)
+CPPFLAGS := -D_WIN32 -DPDC_WIDE=1 -DPDC_FORCE_UTF8=1 \
+            $(if $(filter vt,$(PDC_BACKEND)),-DCLONE_PDC_VT=1,) \
+            -I. -I$(MINGW_PREFIX)/include/pdcurses \
+            -DROGUE_PROGRAM_NAME=$(call shell_quote,"$(PROGRAM)") \
+            -DDEFAULT_SAVE_FILE=$(call shell_quote,"$(SAVEFILE)") \
+            -DSCORE_FILE=$(call shell_quote,"$(SCOREFILE)") \
+            -DLOCK_FILE=$(call shell_quote,"$(LOCKFILE)") \
+            -DDEFAULT_LANGUAGE=$(DEFAULT_LANGUAGE) \
+            -DDEFAULT_JUMP=$(DEFAULT_JUMP) \
+            -DDEFAULT_PASSGO=$(DEFAULT_PASSGO) \
+            -DDEFAULT_COLOR=$(DEFAULT_COLOR) \
+            -DDEFAULT_CURSOR=$(DEFAULT_CURSOR) \
+            $(if $(filter 1,$(ALLSCORES)),-DALLSCORES,) \
+            $(USER_CPPFLAGS) $(EXTRA_CPPFLAGS)
+LDLIBS := -l$(PDC_LIB) -lwinmm -luser32 -lgdi32 -lcomdlg32 -lshell32 -lshlwapi -ladvapi32
+
+.PHONY: all clean distclean dist.src japanese english original prepare-filedir
+all: $(PROGRAM).exe
+
+ifeq ($(AUTO_PREPARE_FILEDIR),1)
+$(PROGRAM).exe: | prepare-filedir
+endif
+prepare-filedir:
+ifeq ($(strip $(RESOLVED_FILEDIR)),)
+	@echo "FILEDIR not set: use current working directory."
+else
+ifeq ($(AUTO_PREPARE_FILEDIR),1)
+	@powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./windows/windows-saved-games.ps1 -Create
+else
+	@mkdir -p "$(RESOLVED_FILEDIR)"
+endif
+endif
+
+%.win.o: %.c rogue.h jec/color.h jec/rogue_i18n.h jec/unicode_text.h windows/rogue_windows.h windows/rogue_windows_console.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+$(ICON_OBJ): $(ICON_RC) $(ICON_ICO)
+	$(WINDRES) -I. -Iwindows -i $(ICON_RC) -o $@ -O coff
+
+$(PROGRAM).exe: $(OBJS) $(ICON_OBJ)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(ICON_OBJ) $(LDLIBS)
+
+clean:
+	rm -f $(OBJS) $(ICON_OBJ) $(PROGRAM).exe
+
+japanese:
+	$(MAKE) -f Makefile.win clean
+	$(MAKE) -f Makefile.win all DEFAULT_LANGUAGE=1
+
+english:
+	$(MAKE) -f Makefile.win clean
+	$(MAKE) -f Makefile.win all DEFAULT_LANGUAGE=2
+
+# As with Unix: English unless overridden with DEFAULT_LANGUAGE=1.
+original:
+	$(MAKE) -f Makefile.win clean
+	$(MAKE) -f Makefile.win all DEFAULT_LANGUAGE=$(if $(filter command line,$(origin DEFAULT_LANGUAGE)),$(DEFAULT_LANGUAGE),2) DEFAULT_JUMP=1 DEFAULT_PASSGO=0 DEFAULT_COLOR=0 DEFAULT_CURSOR=1 ALLSCORES=0
+
+# Use the exact same safe source-package recipe as on Mac/Linux.  Forcing
+# ROGUE_BUILD=unix only selects that Makefile branch; no Unix binary is built.
+dist.src:
+	$(MAKE) -f Makefile ROGUE_BUILD=unix dist.src
+
+# Like the Unix version, do not delete saved games, scores or lock files.
+distclean: clean
+	rm -f config.mk config.log

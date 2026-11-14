@@ -1,0 +1,59 @@
+Rogue Clone III JEC 004
+License and Redistribution Notices
+==================================
+
+The following notices are reproduced from the Rogue Clone III
+source code. The original notices remain in the source files.
+
+1. Notice in main.c and other original source files
+---------------------------------------------------
+This source herein may be modified and/or distributed by anybody who
+so desires, with the following restrictions:
+   1.)  No portion of this notice shall be removed.
+   2.)  Credit shall not be taken for the creation of this source.
+   3.)  This code is not to be traded, sold, or used for personal
+        gain or profit.
+
+2. Notice in rogue.h
+---------------------
+This source herein may be modified and/or distributed by anybody who
+so desires, with the following restrictions:
+   1.)  This notice shall not be removed.
+   2.)  Credit shall not be taken for the creation of this source.
+   3.)  This code is not to be traded, sold, or used for personal
+        gain or profit.
+
+3. Modifications and Additions in Rogue Clone III JEC
+----------------------------------------------------
+Rogue Clone III JEC is a modified and extended version
+of the original Rogue Clone III.
+
+The JEC version includes Japanese and English language
+support, color display, compatibility improvements for
+modern operating systems, bug fixes, and other additions.
+
+Modifications and additions:
+Copyright (c) 2026 leopardgecko
+
+Unless otherwise specified, the JEC-specific source code
+modifications are distributed under the same conditions
+as the original source code license stated above.
+
+The original copyright and redistribution notices remain
+in effect. No ownership of the original Rogue Clone III
+source code is claimed.
+
+
+4. Icon Artwork
+---------------
+The icon artwork included with Rogue Clone III JEC was
+created for this modified version.
+
+Artwork credit: leopardgecko
+
+The icon may be redistributed together with Rogue Clone
+III JEC for non-commercial purposes, provided that this
+notice is retained.
+
+Permission for separate use of the icon is not granted
+by this notice.

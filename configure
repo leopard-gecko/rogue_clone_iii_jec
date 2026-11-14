@@ -1,0 +1,377 @@
+#!/bin/sh
+# Small configure script for Rogue Clone III modern Unix build.
+# It writes config.mk; it does not require autoconf.
+
+set -u
+
+progname=`basename "$0"`
+
+usage() {
+    cat <<EOF_USAGE
+Usage: ./$progname [options]
+
+Options:
+  --help                         Show this help
+  --program=NAME                 Executable name [rogue-clone]
+  --save-file=FILE               Default save file name [PROGRAM.save]
+  --score-file=FILE              Score file name [PROGRAM.scores]
+  --lock-file=FILE               Lock file name [PROGRAM.lock]
+  --file-dir=DIR                 Directory for save/score/lock files
+                                 [current directory]
+  --default-language=auto|ja|en  Initial language fallback [auto]
+  --default-jump=on|off           Initial jump option [off]
+  --default-passgo=on|off         Initial passgo option [on]
+  --default-color=on|off          Initial color option [on]
+  --default-cursor=on|off         Initial cursor option [off]
+  --with-curses=auto|ncurses|ncursesw
+                                 Curses library to use [auto]
+  --with-curses-cflags=FLAGS     Extra C preprocessor flags for curses
+  --with-curses-libs=LIBS        Curses linker flags, e.g. -lncursesw
+  --disable-curses-test          Do not compile/link a curses test program
+  --prefix=DIR                   Installation prefix [/usr/local]
+  --bindir=DIR                   Program install directory [PREFIX/bin]
+  --docdir=DIR                   Documentation install directory [PREFIX/share/doc/PROGRAM]
+  --cc=CC                        C compiler [cc]
+  --cflags=FLAGS                 C compiler flags
+  --cppflags=FLAGS               C preprocessor flags
+  --ldflags=FLAGS                Linker flags
+  --enable-allscores             Keep multiple scores per login name [default]
+  --disable-allscores            Use original one-score-per-user behavior
+
+Examples:
+  ./configure
+  ./configure --default-language=ja
+  ./configure --program=rogue3
+  ./configure --program=rogue3 --score-file=my.scores --save-file=my.save
+  ./configure --program=rogue3 --file-dir=/var/games/rogue3
+  ./configure --with-curses-cflags=-I/opt/include --with-curses-libs="-L/opt/lib -lncursesw"
+EOF_USAGE
+}
+
+PROGRAM=rogue-clone
+SAVEFILE=
+SCOREFILE=
+LOCKFILE=
+FILEDIR=
+DEFAULT_LANGUAGE=0
+DEFAULT_JUMP=0
+DEFAULT_PASSGO=1
+DEFAULT_COLOR=1
+DEFAULT_CURSOR=0
+CURSES_CHOICE=auto
+CURSES_TEST=yes
+ALLSCORES=1
+PREFIX=/usr/local
+BINDIR=
+DOCDIR=
+
+CC=${CC:-cc}
+CFLAGS=${CFLAGS:--std=gnu89 -O2 -DUNIX -DMODERN_UNIX}
+CPPFLAGS=${CPPFLAGS:-}
+LDFLAGS=${LDFLAGS:-}
+CURSES_CFLAGS=${CURSES_CFLAGS:-}
+CURSES_LIB=${CURSES_LIB:-}
+
+bool_value() {
+    case "$1" in
+        on|yes|true|1|enable|enabled) echo 1 ;;
+        off|no|false|0|disable|disabled) echo 0 ;;
+        *)
+            echo "$progname: invalid boolean value: $1" >&2
+            exit 1
+            ;;
+    esac
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --help|-h)
+            usage
+            exit 0
+            ;;
+        --program=*)
+            PROGRAM=${1#*=}
+            ;;
+        --save-file=*)
+            SAVEFILE=${1#*=}
+            ;;
+        --score-file=*)
+            SCOREFILE=${1#*=}
+            ;;
+        --lock-file=*)
+            LOCKFILE=${1#*=}
+            ;;
+        --file-dir=*)
+            FILEDIR=${1#*=}
+            ;;
+        --default-language=*)
+            val=${1#*=}
+            case "$val" in
+                auto|AUTO)
+                    DEFAULT_LANGUAGE=0
+                    ;;
+                ja|jp|japanese|JAPANESE)
+                    DEFAULT_LANGUAGE=1
+                    ;;
+                en|english|ENGLISH)
+                    DEFAULT_LANGUAGE=2
+                    ;;
+                *)
+                    echo "$progname: invalid --default-language value: $val" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+        --default-jump=*)
+            DEFAULT_JUMP=`bool_value "${1#*=}"`
+            ;;
+        --default-passgo=*)
+            DEFAULT_PASSGO=`bool_value "${1#*=}"`
+            ;;
+        --default-color=*)
+            DEFAULT_COLOR=`bool_value "${1#*=}"`
+            ;;
+        --default-cursor=*)
+            DEFAULT_CURSOR=`bool_value "${1#*=}"`
+            ;;
+        --with-curses=*)
+            CURSES_CHOICE=${1#*=}
+            case "$CURSES_CHOICE" in
+                auto|ncurses|ncursesw) ;;
+                *)
+                    echo "$progname: invalid --with-curses value: $CURSES_CHOICE" >&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+        --with-curses-cflags=*)
+            CURSES_CFLAGS=${1#*=}
+            ;;
+        --with-curses-libs=*)
+            CURSES_LIB=${1#*=}
+            ;;
+        --disable-curses-test)
+            CURSES_TEST=no
+            ;;
+        --prefix=*)
+            PREFIX=${1#*=}
+            ;;
+        --bindir=*)
+            BINDIR=${1#*=}
+            ;;
+        --docdir=*)
+            DOCDIR=${1#*=}
+            ;;
+        --cc=*)
+            CC=${1#*=}
+            ;;
+        --cflags=*)
+            CFLAGS=${1#*=}
+            ;;
+        --cppflags=*)
+            CPPFLAGS=${1#*=}
+            ;;
+        --ldflags=*)
+            LDFLAGS=${1#*=}
+            ;;
+        --enable-allscores)
+            ALLSCORES=1
+            ;;
+        --disable-allscores)
+            ALLSCORES=0
+            ;;
+        *)
+            echo "$progname: unknown option: $1" >&2
+            echo "Try ./$progname --help" >&2
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+if [ -z "$PROGRAM" ]; then
+    echo "$progname: --program must not be empty" >&2
+    exit 1
+fi
+if [ -n "$FILEDIR" ]; then
+    case "$FILEDIR" in
+        */) FILE_PREFIX=$FILEDIR ;;
+        *)  FILE_PREFIX=$FILEDIR/ ;;
+    esac
+else
+    FILE_PREFIX=
+fi
+if [ -z "$SAVEFILE" ]; then
+    SAVEFILE=${FILE_PREFIX}$PROGRAM.save
+fi
+if [ -z "$SCOREFILE" ]; then
+    SCOREFILE=${FILE_PREFIX}$PROGRAM.scores
+fi
+if [ -z "$LOCKFILE" ]; then
+    LOCKFILE=${FILE_PREFIX}$PROGRAM.lock
+fi
+if [ -z "$BINDIR" ]; then
+    BINDIR=$PREFIX/bin
+fi
+if [ -z "$DOCDIR" ]; then
+    DOCDIR=$PREFIX/share/doc/$PROGRAM
+fi
+
+choose_curses_libs() {
+    case "$CURSES_CHOICE" in
+        ncurses)
+            echo "-lncurses"
+            ;;
+        ncursesw)
+            echo "-lncursesw"
+            ;;
+        auto)
+            os=`uname -s 2>/dev/null || echo unknown`
+            if [ "$os" = "Darwin" ]; then
+                echo "-lncurses"
+            else
+                echo "-lncursesw"
+            fi
+            ;;
+    esac
+}
+
+rm -f config.log
+{
+    echo "Rogue Clone III configure log"
+    echo "CC=$CC"
+    echo "CFLAGS=$CFLAGS"
+    echo "CPPFLAGS=$CPPFLAGS"
+    echo "CURSES_CFLAGS=$CURSES_CFLAGS"
+    echo "LDFLAGS=$LDFLAGS"
+    echo "CURSES_LIB=$CURSES_LIB"
+    echo "CURSES_CHOICE=$CURSES_CHOICE"
+    echo "CURSES_TEST=$CURSES_TEST"
+    echo "FILEDIR=$FILEDIR"
+    echo "DEFAULT_JUMP=$DEFAULT_JUMP"
+    echo "DEFAULT_PASSGO=$DEFAULT_PASSGO"
+    echo "DEFAULT_COLOR=$DEFAULT_COLOR"
+    echo "DEFAULT_CURSOR=$DEFAULT_CURSOR"
+    echo
+} >> config.log
+
+try_curses() {
+    lib=$1
+    echo "checking curses link with $lib" >> config.log
+    echo "$CC $CPPFLAGS $CURSES_CFLAGS $CFLAGS conftest.c -o conftest $LDFLAGS $lib" >> config.log
+    # Word splitting is intentional here so that CC/CFLAGS/LDFLAGS/CURSES_LIB
+    # can contain ordinary command-line fragments.
+    if $CC $CPPFLAGS $CURSES_CFLAGS $CFLAGS conftest.c -o conftest $LDFLAGS $lib >> config.log 2>&1; then
+        CURSES_LIB=$lib
+        return 0
+    fi
+    return 1
+}
+
+found_curses=no
+
+if [ "$CURSES_TEST" = no ]; then
+    if [ -z "$CURSES_LIB" ]; then
+        CURSES_LIB=`choose_curses_libs`
+    fi
+    found_curses=yes
+    echo "skipping curses test" >> config.log
+else
+    cat > conftest.c <<'EOF_TEST'
+#include <curses.h>
+int main(void) {
+    initscr();
+    endwin();
+    return 0;
+}
+EOF_TEST
+
+    if [ -n "$CURSES_LIB" ]; then
+        if try_curses "$CURSES_LIB"; then
+            found_curses=yes
+        fi
+    else
+        case "$CURSES_CHOICE" in
+            ncurses)
+                if try_curses "-lncurses"; then found_curses=yes; fi
+                ;;
+            ncursesw)
+                if try_curses "-lncursesw"; then found_curses=yes; fi
+                ;;
+            auto)
+                os=`uname -s 2>/dev/null || echo unknown`
+                if [ "$os" = "Darwin" ]; then
+                    candidates="-lncurses -lncursesw"
+                else
+                    candidates="-lncursesw -lncurses"
+                fi
+                for lib in $candidates; do
+                    if try_curses "$lib"; then
+                        found_curses=yes
+                        break
+                    fi
+                done
+                ;;
+        esac
+    fi
+
+    rm -f conftest conftest.c conftest.o conftest.err
+fi
+
+if [ "$found_curses" != yes ]; then
+    cat >&2 <<EOF_ERROR
+$progname: could not compile and link a small curses test program.
+Install a curses/ncurses development package, or specify flags manually.
+Examples:
+  ./configure --with-curses=ncursesw
+  ./configure --with-curses=ncurses
+  ./configure --with-curses-cflags=-I/opt/include --with-curses-libs="-L/opt/lib -lncursesw"
+  ./configure --disable-curses-test --with-curses-libs=-lncursesw
+See config.log for details.
+EOF_ERROR
+    exit 1
+fi
+
+cat > config.mk <<EOF_MK
+# Generated by ./configure.  Edit this file or rerun ./configure to change it.
+CC = $CC
+CFLAGS = $CFLAGS
+CPPFLAGS = $CPPFLAGS
+CURSES_CFLAGS = $CURSES_CFLAGS
+LDFLAGS = $LDFLAGS
+CURSES_LIB = $CURSES_LIB
+PROGRAM = $PROGRAM
+FILEDIR = $FILEDIR
+SAVEFILE = $SAVEFILE
+SCOREFILE = $SCOREFILE
+LOCKFILE = $LOCKFILE
+PREFIX = $PREFIX
+BINDIR = $BINDIR
+DOCDIR = $DOCDIR
+DEFAULT_LANGUAGE = $DEFAULT_LANGUAGE
+DEFAULT_JUMP = $DEFAULT_JUMP
+DEFAULT_PASSGO = $DEFAULT_PASSGO
+DEFAULT_COLOR = $DEFAULT_COLOR
+DEFAULT_CURSOR = $DEFAULT_CURSOR
+ALLSCORES = $ALLSCORES
+EOF_MK
+
+cat <<EOF_DONE
+Configuration complete.
+  compiler:        $CC
+  curses cflags:   $CURSES_CFLAGS
+  curses library:  $CURSES_LIB
+  program:         $PROGRAM
+  file dir:        ${FILEDIR:-.}
+  score file:      $SCOREFILE
+  save file:       $SAVEFILE
+  lock file:       $LOCKFILE
+  defaults:        jump=$DEFAULT_JUMP passgo=$DEFAULT_PASSGO color=$DEFAULT_COLOR cursor=$DEFAULT_CURSOR
+  allscores:       $ALLSCORES
+  install prefix:  $PREFIX
+
+Now run:
+  make
+EOF_DONE
+
+exit 0
