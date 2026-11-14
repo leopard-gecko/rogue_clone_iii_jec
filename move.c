@@ -27,6 +27,37 @@ extern short e_rings, regeneration, auto_search;
 extern char hunger_str[];
 extern boolean being_held, interrupted, r_teleport, passgo;
 
+/*
+ * A continuous run can follow passgo through a closed passage indefinitely.
+ * As in Rogue 5.4.5 JEC, remember the heading at each square and stop before
+ * trying a second move from the same square in the same direction.
+ * One byte per dungeon square records all eight directions (24 * 80 bytes).
+ *
+ * turn_passage() calls multiple_move_rogue() recursively; retain the history
+ * across those calls and reset it only for a new player command.
+ */
+static unsigned char run_visited[DROWS][DCOLS];
+static short run_depth = 0;
+static boolean run_cycle_stopped = 0;
+
+static boolean record_run_step(short dir)
+{
+	short heading;
+	unsigned char bit;
+
+	if (!is_direction(dir, &heading) ||
+	    !ROGUE_IN_DUNGEON(rogue.row, rogue.col)) {
+		return(1);
+	}
+	bit = (unsigned char) (1U << heading);
+	if (run_visited[rogue.row][rogue.col] & bit) {
+		run_cycle_stopped = 1;
+		return(0);
+	}
+	run_visited[rogue.row][rogue.col] |= bit;
+	return(1);
+}
+
 int one_move_rogue(short dirch, short pickup)
 {
 	short row, col;
@@ -169,7 +200,13 @@ MVED:	if (reg_move()) {			/* fainted from hunger */
 void multiple_move_rogue(short dirch)
 {
 	short row, col;
-	short m;
+	short m = MOVE_FAILED;
+
+	if (run_depth == 0) {
+		(void) memset(run_visited, 0, sizeof(run_visited));
+		run_cycle_stopped = 0;
+	}
+	run_depth++;
 
 	switch(dirch) {
 	case '\010':
@@ -183,6 +220,10 @@ void multiple_move_rogue(short dirch)
 		do {
 			row = rogue.row;
 			col = rogue.col;
+			/* A repeated square and heading is a loop, not another turn. */
+			if (!record_run_step(dirch + 96)) {
+				break;
+			}
 			m = one_move_rogue((dirch + 96), 1);
 			if ((!jump) && (m == MOVED)) {
 				move(rogue.row, rogue.col);
@@ -196,8 +237,9 @@ void multiple_move_rogue(short dirch)
 				break;
 			}
 		} while (!next_to_something(row, col));
-		if (	(!interrupted) && passgo && (m == MOVE_FAILED) &&
-				(dungeon[rogue.row][rogue.col] & TUNNEL)) {
+		if (	(!run_cycle_stopped) && (!interrupted) && passgo &&
+			(m == MOVE_FAILED) &&
+			(dungeon[rogue.row][rogue.col] & TUNNEL)) {
 			turn_passage(dirch + 96, 0);
 		}
 		break;
@@ -210,6 +252,10 @@ void multiple_move_rogue(short dirch)
 	case 'U':
 	case 'N':
 		while (!interrupted) {
+			/* Stop without moving or spending a turn on the repeat. */
+			if (!record_run_step(dirch + 32)) {
+				break;
+			}
 			m = one_move_rogue((dirch + 32), 1);
 			if (m != MOVED) {
 				break;
@@ -222,12 +268,14 @@ void multiple_move_rogue(short dirch)
 			}
 		}
 
-		if (	(!interrupted) && passgo &&
-				(dungeon[rogue.row][rogue.col] & TUNNEL)) {
+		if (	(!run_cycle_stopped) && (!interrupted) && passgo &&
+			(dungeon[rogue.row][rogue.col] & TUNNEL)) {
 			turn_passage(dirch + 32, 1);
 		}
 		break;
 	}
+
+	run_depth--;
 }
 
 int is_passable(register int row, register int col)
