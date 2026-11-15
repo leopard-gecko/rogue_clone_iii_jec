@@ -1,10 +1,8 @@
 # Rogue Clone III JEC 004 — macOS / Linux（日本語）
 
-Rogue Clone IIIは、古典的なRPG「Rogue」をもとに作られたクローン系統の最終版です。オリジナル系統のRogue 5.4と比べると、暗い部屋が存在せず、巻き物や水薬が使用後に自動的に識別されるなど、仕組みがシンプルでテンポよく遊べるのが特徴です。プレイヤーは文字で描かれる迷宮で怪物と戦い、さまざまな道具を使いながら「イェンダーの魔除け」を探します。
+この文書では、**macOS・Linux・Raspberry Pi OS**でのビルド・起動・インストール・保存先を説明します。ゲームの紹介とJEC版の変更点は[リポジトリのREADME](README.md)、操作やアイテムの説明は[「【運命の洞窟】への案内書」](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3)をご覧ください。
 
-このJEC版は、日本語・英語の切り替えと現代のOSでの動作に対応しています。
-
-ゲームの説明や遊び方については、[「【運命の洞窟】への案内書」](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3)をご覧ください。本READMEではmacOS・Linux・Raspberry Pi OSでのビルドと設定を説明します。Windows版は [`README_windows_ja.md`](README_windows_ja.md)、英語版は [`README_mac_linux_en.md`](README_mac_linux_en.md) を参照してください。
+英語版：[README_mac_linux_en.md](README_mac_linux_en.md)
 
 ## 1. 開発環境の準備
 
@@ -101,24 +99,8 @@ make
 
 実行ファイル名は `--program=NAME` で、個々のファイル名は `--save-file=FILE`、`--score-file=FILE` で変更できます。`make` の変数 `PROGRAM`（または `PROG`）、`FILEDIR`、`SAVEFILE`、`SCOREFILE` も使用できます。
 
-## 6. ファイルとソース配布
-
-| ファイル | 用途 |
-|---|---|
-| `rogue-clone` / `rogue-clone.exe` | ビルド後のゲーム本体（OSにより異なる） |
-| `rogue-clone.save` / `.scores` | 既定のゲームデータファイル |
-| `configure` / `Makefile` / `Makefile.win` | ビルド・インストールの設定 |
-| `*.c` / `*.h` | ソースコード |
-| `README_mac_linux_ja.md` / `README_mac_linux_en.md` | macOS / Linux用の日本語・英語説明書 |
-| `README_windows_ja.md` / `README_windows_en.md` | Windows用の日本語・英語説明書 |
+## 6. ソース配布
 
 ソース配布用アーカイブは `make dist.src` で作成できます。既定では親ディレクトリに `rogue-clone-iii-004-src.tar.gz` を出力します。
 
-## 7. オリジナルのRogue Clone IIIからの主な変更点
-
-- macOS・Linux・Raspberry Pi OS・Windowsへの対応
-- 日本語・英語の表示とUnicode入力への対応
-- カラー表示、操作設定、Windows用透過アイコンの追加
-- Windowsでのダブルクリック起動時の80列×24行への調整
-- スコアと保存先の設定、描画・戦闘・アイテム・階層生成などの不具合修正
-
+案内書と他のOS向けのREADMEは[リポジトリのREADME](README.md)から参照できます。

@@ -1,10 +1,8 @@
 # Rogue Clone III JEC 004 — Windows（日本語）
 
-Rogue Clone IIIは、古典的なRPG「Rogue」をもとに作られたクローン系統の最終版です。オリジナル系統のRogue 5.4と比べると、暗い部屋が存在せず、巻き物や水薬が使用後に自動的に識別されるなど、仕組みがシンプルでテンポよく遊べるのが特徴です。プレイヤーは文字で描かれる迷宮で怪物と戦い、さまざまな道具を使いながら「イェンダーの魔除け」を探します。
+この文書では、**Windows 10 / 11**でのビルド・起動・環境変数・保存先を説明します。ゲームの紹介とJEC版の変更点は[リポジトリのREADME](README.md)、操作やアイテムの説明は[「【運命の洞窟】への案内書」](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3)をご覧ください。
 
-このJEC版は、日本語・英語の切り替えと現代のOSでの動作に対応しています。
-
-ゲームの説明や遊び方については、[「【運命の洞窟】への案内書」](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3)をご覧ください。本READMEではWindowsでのビルド・起動・設定方法を説明します。macOS / Linux版は [`README_mac_linux_ja.md`](README_mac_linux_ja.md)、英語版は [`README_windows_en.md`](README_windows_en.md) を参照してください。
+英語版：[README_windows_en.md](README_windows_en.md)
 
 ## 1. 開発環境の準備
 
@@ -111,24 +109,8 @@ make FILEDIR='C:/Games/Rogue Clone III'
 
 通常の `FILEDIR` 指定ではフォルダは自動作成されません。事前に作成し、書き込み権限を確認してください。`SAVEFILE=FILE` または `SCOREFILE=FILE` で個々のファイル名を指定でき、`FILEDIR` より優先されます。
 
-## 6. ファイルと配布
-
-| ファイル | 用途 |
-|---|---|
-| `rogue-clone` / `rogue-clone.exe` | ビルド後のゲーム本体（OSにより異なる） |
-| `rogue-clone.save` / `.scores` | 既定のゲームデータファイル |
-| `configure` / `Makefile` / `Makefile.win` | ビルド・インストールの設定 |
-| `*.c` / `*.h` | ソースコード |
-| `README_mac_linux_ja.md` / `README_mac_linux_en.md` | macOS / Linux用の日本語・英語説明書 |
-| `README_windows_ja.md` / `README_windows_en.md` | Windows用の日本語・英語説明書 |
+## 6. Windows版の配布
 
 Windows版のアイコンには `windows/rogue-clone-iii.ico` と `windows/rogue-icon.rc` を使用します。`windows/windows-saved-games.ps1` は「保存したゲーム」フォルダを取得するビルド用スクリプトです。EXEを別のPCに配布するときは、必要な実行時DLLも確認してください。
 
-## 7. オリジナルのRogue Clone IIIからの主な変更点
-
-- macOS・Linux・Raspberry Pi OS・Windowsへの対応
-- 日本語・英語の表示とUnicode入力（UCRT64での絵文字入力を含む）への対応
-- カラー表示、操作設定、Windows用透過アイコンの追加
-- Windowsでのダブルクリック起動時の80列×24行への調整
-- スコアと保存先の設定、描画・戦闘・アイテム・階層生成などの不具合修正
-
+案内書と他のOS向けのREADMEは[リポジトリのREADME](README.md)から参照できます。

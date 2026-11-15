@@ -23,6 +23,14 @@ macOS / Linuxでは通常 `make`、WindowsではMSYS2 UCRT64環境からビル�
 
 *On macOS/Linux, the standard build uses `make`. Windows builds use MSYS2 UCRT64; see the platform-specific README for prerequisites and details.*
 
+## JEC版の主な変更点 / Main changes in JEC
+
+- 日本語・英語の表示切り替えとUnicode文字の入力・表示 / Japanese/English language switching and Unicode input/display
+- カラー表示と、通常版・オリジナル寄りの初期設定 / Color display and modern/original-style defaults
+- macOS、Linux、Raspberry Pi OS、Windowsへの対応 / Support for modern operating systems
+- Windowsでのダブルクリック起動、セーブファイルからの再開、画面サイズ調整 / Windows double-click launching, save-file resume, and terminal-size adjustment
+- 描画、操作、戦闘、アイテム、階層生成などの不具合修正 / Fixes for display, controls, combat, items, and dungeon generation
+
 ## 【運命の洞窟】への案内書 / A Guide to the Dungeons of Doom
 
 ゲームの操作、画面表示、アイテム、オプションなどについては、[公開サイトのClone III用案内書](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3)をご覧ください。

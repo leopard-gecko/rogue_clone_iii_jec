@@ -1,10 +1,8 @@
 # Rogue Clone III JEC 004 — Windows (English)
 
-Rogue Clone III is the final installment of the clone series based on the classic RPG Rogue. Compared with the original Rogue 5.4 line, it has no dark rooms, and scrolls and potions are automatically identified after use. These simpler mechanics make the game straightforward and fast-paced. Explore a dungeon rendered in text, battle monsters, use a variety of items, and search for the Amulet of Yendor.
+This document explains building, launching, environment variables, and file locations on **Windows 10 / 11**. For the game overview and JEC changes, see the [repository README](README.md); for game commands and items, see the [Dungeon Guide](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3).
 
-This JEC edition supports Japanese and English and runs on modern operating systems.
-
-For the game overview and how to play, see the [「【運命の洞窟】への案内書」 (Dungeon Guide)](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3). This README covers building, launching, and configuring the Windows edition. For macOS/Linux see [`README_mac_linux_en.md`](README_mac_linux_en.md); for Japanese see [`README_windows_ja.md`](README_windows_ja.md).
+Japanese version: [README_windows_ja.md](README_windows_ja.md)
 
 ## 1. Requirements
 
@@ -111,24 +109,8 @@ make FILEDIR='C:/Games/Rogue Clone III'
 
 A normal `FILEDIR` value does not create its directory. Create it first and ensure write permission. Use `SAVEFILE=FILE` or `SCOREFILE=FILE` to set individual filenames; these take precedence over `FILEDIR`.
 
-## 6. Files and distribution
+## 6. Windows distribution
 
-| File | Purpose |
-|---|---|
-| `rogue-clone` / `rogue-clone.exe` | Built executable (depending on OS) |
-| `rogue-clone.save` / `.scores` | Default game data files |
-| `configure` / `Makefile` / `Makefile.win` | Build and installation configuration |
-| `*.c` / `*.h` | Source files |
-| `README_mac_linux_ja.md` / `README_mac_linux_en.md` | macOS/Linux guides (Japanese/English) |
-| `README_windows_ja.md` / `README_windows_en.md` | Windows guides (Japanese/English) |
+The Windows icon uses `windows/rogue-clone-iii.ico` and `windows/rogue-icon.rc`. The `windows/windows-saved-games.ps1` script locates the Saved Games folder at build time. Check for required runtime DLLs before distributing the EXE to other PCs.
 
-The Windows icon uses `windows/rogue-clone-iii.ico` and `windows/rogue-icon.rc`. `windows/windows-saved-games.ps1` locates the Saved Games folder at build time. When distributing the EXE, check for any required runtime DLLs.
-
-## 7. Main changes from the original Rogue Clone III
-
-- Support for macOS, Linux, Raspberry Pi OS, and Windows
-- Japanese/English display and Unicode input, including emoji in UCRT64
-- Color, control options, and a transparent Windows application icon
-- An 80×24 terminal resize attempt for direct Windows double-click launches
-- Configurable score and data file locations, plus fixes to drawing, combat, items, and dungeon generation
-
+For the game guide and other platform READMEs, see the [repository README](README.md).

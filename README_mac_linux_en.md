@@ -1,10 +1,8 @@
 # Rogue Clone III JEC 004 — macOS / Linux (English)
 
-Rogue Clone III is the final installment of the clone series based on the classic RPG Rogue. Compared with the original Rogue 5.4 line, it has no dark rooms, and scrolls and potions are automatically identified after use. These simpler mechanics make the game straightforward and fast-paced. Explore a dungeon rendered in text, battle monsters, use a variety of items, and search for the Amulet of Yendor.
+This document explains building, launching, installing, and file locations on **macOS, Linux, and Raspberry Pi OS**. For the game overview and JEC changes, see the [repository README](README.md); for game commands and items, see the [Dungeon Guide](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3).
 
-This JEC edition supports Japanese and English and runs on modern operating systems.
-
-For the game overview and how to play, see the [「【運命の洞窟】への案内書」 (Dungeon Guide)](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3). This README covers building and configuring the game on macOS, Linux, and Raspberry Pi OS. For Windows see [`README_windows_en.md`](README_windows_en.md); for Japanese see [`README_mac_linux_ja.md`](README_mac_linux_ja.md).
+Japanese version: [README_mac_linux_ja.md](README_mac_linux_ja.md)
 
 ## 1. Requirements
 
@@ -100,24 +98,8 @@ The directory selected with `--file-dir` is created automatically when needed **
 
 Use `--program=NAME` to rename the executable, or `--save-file=FILE` or `--score-file=FILE` to choose filenames. The `make` variables `PROGRAM` (or `PROG`), `FILEDIR`, `SAVEFILE`, and `SCOREFILE` are also supported.
 
-## 6. Files and source distribution
+## 6. Source distribution
 
-| File | Purpose |
-|---|---|
-| `rogue-clone` / `rogue-clone.exe` | Built executable (depending on OS) |
-| `rogue-clone.save` / `.scores` | Default game data files |
-| `configure` / `Makefile` / `Makefile.win` | Build and installation configuration |
-| `*.c` / `*.h` | Source files |
-| `README_mac_linux_ja.md` / `README_mac_linux_en.md` | macOS/Linux guides (Japanese/English) |
-| `README_windows_ja.md` / `README_windows_en.md` | Windows guides (Japanese/English) |
+Create a source archive with `make dist.src`. By default it creates `rogue-clone-iii-004-src.tar.gz` in the parent directory.
 
-Run `make dist.src` to create a source archive (`rogue-clone-iii-004-src.tar.gz` in the parent directory by default).
-
-## 7. Main changes from the original Rogue Clone III
-
-- Support for macOS, Linux, Raspberry Pi OS, and Windows
-- Japanese/English display and Unicode input
-- Color, control options, and a transparent Windows application icon
-- An 80×24 terminal resize attempt for direct Windows double-click launches
-- Configurable score and data file locations, plus fixes to drawing, combat, items, and dungeon generation
-
+For the game guide and other platform READMEs, see the [repository README](README.md).
