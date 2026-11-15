@@ -29,6 +29,7 @@ extern char *byebye_string;
 extern char *press_space;
 extern char *language_option;
 
+void rogue_init_locale(void);
 void rogue_detect_language(void);
 void rogue_set_language_code(char *code);
 int rogue_set_initial_language_code(const char *code);
@@ -49,7 +50,6 @@ char *rogue_str(char *en, char *ja);
 #endif
 #define JP(s) (rogue_lang_is_japanese ? (s) : "")
 
-#define ROGUE_LOCALE ""
 #define ROGUE_MORE EN("-more-", " --続く-- ")
 #define ROGUE_BYEBYE EN("Okay, bye bye!", "了解、またね！")
 #define ROGUE_FRUIT EN("slime-mold", "ネバネバかび")

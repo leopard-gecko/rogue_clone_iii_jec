@@ -183,31 +183,82 @@ char *md_malloc(int n) { return (char *)malloc((size_t)n); }
 int md_gseed(void) { return (int)(GetTickCount() ^ GetCurrentProcessId()); }
 void md_exit(int status) { exit(status); }
 
-/* CREATE_NEW provides an atomic, per-score-file lock. */
-void md_lock(boolean lock)
+/* Lock the first byte of the score stream's own file handle.
+ * Read/write and LockFileEx must use the same HANDLE. */
+static HANDLE score_lock_handle = INVALID_HANDLE_VALUE;
+static OVERLAPPED score_lock_overlapped;
+
+int md_lock(FILE *fp, boolean acquire)
 {
-    int tries;
-    wchar_t *name = rogue_win_to_wide(LOCK_FILE);
-    if (!name) return;
-    if (lock) {
-        for (tries = 0; tries < 5; tries++) {
-            HANDLE f = CreateFileW(name, GENERIC_WRITE, 0, NULL, CREATE_NEW,
-                                   FILE_ATTRIBUTE_NORMAL, NULL);
-            if (f != INVALID_HANDLE_VALUE) {
-                CloseHandle(f);
-                break;
-            }
-            if (tries == 4) {
-                message(EN("cannot lock score file", "得点ファイルをロックできません。"), 0);
-            } else {
-                Sleep(2000);
-            }
+    HANDLE handle;
+    intptr_t os_handle;
+    DWORD error;
+    int attempt;
+
+    if (!acquire) {
+        if (score_lock_handle != INVALID_HANDLE_VALUE) {
+            (void) UnlockFileEx(score_lock_handle, 0, 1, 0,
+                                &score_lock_overlapped);
+            score_lock_handle = INVALID_HANDLE_VALUE;
         }
-    } else {
-        (void) DeleteFileW(name);
+        return 1;
     }
-    free(name);
+    if (score_lock_handle != INVALID_HANDLE_VALUE) {
+        errno = EBUSY;
+        return 0;
+    }
+    if (fp == NULL || _fileno(fp) < 0 ||
+        (os_handle = _get_osfhandle(_fileno(fp))) == -1) {
+        errno = EBADF;
+        return 0;
+    }
+    handle = (HANDLE) os_handle;
+    memset(&score_lock_overlapped, 0, sizeof score_lock_overlapped);
+    for (attempt = 0; attempt <= 50; ++attempt) {
+        if (LockFileEx(handle, LOCKFILE_EXCLUSIVE_LOCK |
+                       LOCKFILE_FAIL_IMMEDIATELY, 0, 1, 0,
+                       &score_lock_overlapped)) {
+            score_lock_handle = handle;
+            return 1;
+        }
+        error = GetLastError();
+        if (error != ERROR_LOCK_VIOLATION && error != ERROR_IO_PENDING) {
+            errno = EIO;
+            return 0;
+        }
+        if (attempt < 50)
+            Sleep(100);
+    }
+    errno = EWOULDBLOCK;
+    return 0;
 }
+
+/* Open/create atomically, without truncating scores created by another process. */
+FILE *md_score_open(const char *path)
+{
+    wchar_t *wide = rogue_win_to_wide(path);
+    HANDLE handle;
+    int fd;
+    FILE *fp;
+    if (wide == NULL)
+        return NULL;
+    handle = CreateFileW(wide, GENERIC_READ | GENERIC_WRITE,
+                         FILE_SHARE_READ | FILE_SHARE_WRITE,
+                         NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    free(wide);
+    if (handle == INVALID_HANDLE_VALUE)
+        return NULL;
+    fd = _open_osfhandle((intptr_t)handle, _O_RDWR | _O_BINARY);
+    if (fd < 0) {
+        CloseHandle(handle);
+        return NULL;
+    }
+    fp = _fdopen(fd, "r+b");
+    if (fp == NULL)
+        _close(fd);
+    return fp;
+}
+
 /* Keep Rogue attached to its console while cmd.exe is running.  A
  * temporary console-control handler prevents Ctrl-C meant for cmd.exe
  * from interrupting the suspended game.  Unlike SIG_IGN, this handler

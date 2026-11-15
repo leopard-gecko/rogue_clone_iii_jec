@@ -7,6 +7,10 @@
 
 #include <stddef.h>
 
+/* Return the byte length of one valid Unicode scalar, or 0 for invalid input.
+ * The buffer is not required to be NUL-terminated. */
+size_t jrogue_utf8_scalar_length(const char *bytes, size_t available);
+
 /* Positions are UTF-8 byte offsets; the returned offsets are whole
  * extended-character boundaries.  Invalid UTF-8 bytes stand alone. */
 size_t jrogue_text_next(const char *text, size_t pos);

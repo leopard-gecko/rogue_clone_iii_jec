@@ -15,8 +15,7 @@ Options:
   --program=NAME                 Executable name [rogue-clone]
   --save-file=FILE               Default save file name [PROGRAM.save]
   --score-file=FILE              Score file name [PROGRAM.scores]
-  --lock-file=FILE               Lock file name [PROGRAM.lock]
-  --file-dir=DIR                 Directory for save/score/lock files
+  --file-dir=DIR                 Directory for save/score files
                                  [current directory]
   --default-language=auto|ja|en  Initial language fallback [auto]
   --default-jump=on|off           Initial jump option [off]
@@ -51,7 +50,6 @@ EOF_USAGE
 PROGRAM=rogue-clone
 SAVEFILE=
 SCOREFILE=
-LOCKFILE=
 FILEDIR=
 DEFAULT_LANGUAGE=0
 DEFAULT_JUMP=0
@@ -97,9 +95,6 @@ while [ $# -gt 0 ]; do
             ;;
         --score-file=*)
             SCOREFILE=${1#*=}
-            ;;
-        --lock-file=*)
-            LOCKFILE=${1#*=}
             ;;
         --file-dir=*)
             FILEDIR=${1#*=}
@@ -206,9 +201,6 @@ if [ -z "$SAVEFILE" ]; then
 fi
 if [ -z "$SCOREFILE" ]; then
     SCOREFILE=${FILE_PREFIX}$PROGRAM.scores
-fi
-if [ -z "$LOCKFILE" ]; then
-    LOCKFILE=${FILE_PREFIX}$PROGRAM.lock
 fi
 if [ -z "$BINDIR" ]; then
     BINDIR=$PREFIX/bin
@@ -344,7 +336,6 @@ PROGRAM = $PROGRAM
 FILEDIR = $FILEDIR
 SAVEFILE = $SAVEFILE
 SCOREFILE = $SCOREFILE
-LOCKFILE = $LOCKFILE
 PREFIX = $PREFIX
 BINDIR = $BINDIR
 DOCDIR = $DOCDIR
@@ -365,7 +356,6 @@ Configuration complete.
   file dir:        ${FILEDIR:-.}
   score file:      $SCOREFILE
   save file:       $SAVEFILE
-  lock file:       $LOCKFILE
   defaults:        jump=$DEFAULT_JUMP passgo=$DEFAULT_PASSGO color=$DEFAULT_COLOR cursor=$DEFAULT_CURSOR
   allscores:       $ALLSCORES
   install prefix:  $PREFIX

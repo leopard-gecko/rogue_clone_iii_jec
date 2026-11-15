@@ -27,6 +27,15 @@ extern boolean cant_int, did_int, interrupted, save_is_interactive;
 extern short add_strength;
 extern short cur_level;
 
+/* Repaint supplementary-plane glyphs after the Windows VT curses refresh. */
+static void refresh_message_text(void)
+{
+    refresh();
+#ifdef _WIN32
+    rogue_win_vt_restore_nonbmp_rows(1);
+#endif
+}
+
 void message(char *msg, boolean intrpt)
 {
 	cant_int = 1;
@@ -41,7 +50,7 @@ void message(char *msg, boolean intrpt)
 
 	if (!msg_cleared) {
 		mvaddstr(MIN_ROW-1, msg_col, more);
-		refresh();
+		refresh_message_text();
 		wait_for_ack();
 		check_message();
 	}
@@ -52,7 +61,7 @@ void message(char *msg, boolean intrpt)
 	move(MIN_ROW-1, 0);
 	rogue_addstr_fit(msg, DCOLS - 1);
 	addch(' ');
-	refresh();
+	refresh_message_text();
 	msg_cleared = 0;
 	msg_col = jrogue_text_width(msg);
 	if (msg_col > (DCOLS - jrogue_text_width(more) - 1)) {
@@ -81,7 +90,7 @@ void remessage(short c)
 		message(msgs[((imsg - c) % NMESSAGES)], 0);
 		rmsg = 0;
 		move(rogue.row, rogue.col);
-		refresh();
+		refresh_message_text();
 	}
 }
 
@@ -92,7 +101,7 @@ void check_message(void)
 	}
 	move(MIN_ROW-1, 0);
 	clrtoeol();
-	refresh();
+	refresh_message_text();
 	msg_cleared = 1;
 	if (!show_cursor) {
 		rogue_show_cursor(0);
@@ -116,7 +125,7 @@ int get_input_line(char *prompt, char *insert, char *buf, char *if_cancelled, bo
 		i = strlen(insert);
 		move(MIN_ROW-1, ((n + jrogue_text_width(buf) + 1 < DCOLS) ?
 			(n + jrogue_text_width(buf) + 1) : DCOLS - 1));
-		refresh();
+		refresh_message_text();
 	}
 
 	rogue_show_cursor(1);
@@ -147,7 +156,7 @@ int get_input_line(char *prompt, char *insert, char *buf, char *if_cancelled, bo
 				}
 			}
 		}
-		refresh();
+		refresh_message_text();
 	}
 	check_message();
 	rogue_show_cursor(show_cursor);
@@ -177,39 +186,31 @@ int rogue_utf8_edit_char(int ch)
 
 int rogue_read_utf8_char(int first, char *out, int out_size)
 {
-	int len = 1;
-	int i, ch;
-	unsigned char c = (unsigned char) first;
+	int len, i, ch;
+	unsigned char c;
 
-	/* Reject ASCII controls, including DEL (0x7f).  In particular,
-	 * an empty input field must not accept Backspace as a character. */
-	if ((first < ' ') || (first == 0x7f)) {
+	/* Input must be one Unicode scalar, never a control byte. */
+	if (first < 0 || first > 255 || first < ' ' || first == 0x7f) {
 		return(0);
 	}
-	if ((c & 0x80) == 0) {
-		len = 1;
-	} else if ((c & 0xe0) == 0xc0) {
-		len = 2;
-	} else if ((c & 0xf0) == 0xe0) {
-		len = 3;
-	} else if ((c & 0xf8) == 0xf0) {
-		len = 4;
-	} else {
-		return(0);
-	}
-	if (len >= out_size) {
-		return(0);
-	}
-	out[0] = (char) c;
+	c = (unsigned char) first;
+	if (c < 0x80) len = 1;
+	else if (c >= 0xc2 && c <= 0xdf) len = 2;
+	else if (c >= 0xe0 && c <= 0xef) len = 3;
+	else if (c >= 0xf0 && c <= 0xf4) len = 4;
+	else return(0);
+
+	if (!out || out_size <= len) return(0);
+	out[0] = (char)c;
 	for (i = 1; i < len; i++) {
 		ch = rgetchar();
-		if (ch == CANCEL) {
+		if (ch < 0 || ch > 255 || ((ch & 0xc0) != 0x80)) {
 			return(0);
 		}
-		if (((unsigned char) ch & 0xc0) != 0x80) {
-			return(0);
-		}
-		out[i] = (char) ch;
+		out[i] = (char)ch;
+	}
+	if (jrogue_utf8_scalar_length(out, (size_t)len) != (size_t)len) {
+		return(0);
 	}
 	out[len] = 0;
 	return(len);
@@ -240,7 +241,13 @@ void rogue_addstr_fit(char *s, int max_cols)
 	}
 	memcpy(buf, s, at);
 	buf[at] = 0;
+#ifdef _WIN32
+    /* Keep complete UTF-8 runs and supplementary scalars on the same
+     * Windows output path as the 5.4.5 JEC implementation. */
+    rogue_win_addstr_utf8(buf);
+#else
 	addstr(buf);
+#endif
 }
 
 int rgetchar(void)

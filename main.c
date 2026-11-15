@@ -14,7 +14,6 @@
 static char sccsid[] __attribute__((unused)) = "@(#)main.c	5.1 (Berkeley) 11/25/87";
 #endif /* not lint */
 
-#include <locale.h>
 #include "rogue.h"
 
 extern short party_room;
@@ -25,7 +24,7 @@ int main(int argc, char **argv)
 	rogue_win_resize_direct_launch();
 	rogue_win_utf8_argv(&argc, &argv);
 #endif
-	setlocale(LC_ALL, ROGUE_LOCALE);
+	rogue_init_locale();
 
 	if (init(argc, argv)) {		/* restored game */
 		goto PL;

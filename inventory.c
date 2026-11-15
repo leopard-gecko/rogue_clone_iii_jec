@@ -340,6 +340,9 @@ void inventory(object *pack, unsigned short mask)
 		clrtoeol();
 	}
 	refresh();
+#ifdef _WIN32
+	rogue_win_vt_restore_nonbmp_rows(rows_shown);
+#endif
 	wait_for_ack();
 
 	for (row = 0; row < rows_shown; row++) {

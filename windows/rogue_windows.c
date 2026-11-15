@@ -378,21 +378,17 @@ FILE *rogue_win_fopen(const char *path, const char *mode)
 }
 
 
-/* Preserve the original PDCursesMod UTF-8 and optional VT setup.
- * Called by init() before initscr(). */
-void rogue_win_setup_console_encoding(void)
+/* cmd.exe can change the code pages while the ! shell command is active.
+ * Restore UTF-8 after PDCurses has restored its own console mode.  Do not
+ * change output handles or VT processing flags. */
+void rogue_win_restore_shell_encoding(void)
 {
-    SetConsoleOutputCP(CP_UTF8);
-    SetConsoleCP(CP_UTF8);
-#ifdef CLONE_PDC_VT
-    {
-        HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
-        DWORD mode;
-        if ((out != INVALID_HANDLE_VALUE) && GetConsoleMode(out, &mode)) {
-            (void) SetConsoleMode(out, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-        }
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD mode;
+    if (out && out != INVALID_HANDLE_VALUE && GetConsoleMode(out, &mode)) {
+        (void)SetConsoleOutputCP(CP_UTF8);
+        (void)SetConsoleCP(CP_UTF8);
     }
-#endif
 }
 
 /* Direct-launch save selection, previously kept in init.c.

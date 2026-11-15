@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <wchar.h>
 
-void rogue_win_setup_console_encoding(void);
+void rogue_win_restore_shell_encoding(void);
 void rogue_win_startup_save_menu(void);
 void rogue_win_resize_direct_launch(void);
 void rogue_win_retry_direct_launch_resize(void);

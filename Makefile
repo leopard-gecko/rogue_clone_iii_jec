@@ -93,11 +93,9 @@ endif
 ifneq ($(strip $(FILEDIR)),)
 SAVEFILE ?= $(FILEDIR)/$(PROGRAM).save
 SCOREFILE ?= $(FILEDIR)/$(PROGRAM).scores
-LOCKFILE ?= $(FILEDIR)/$(PROGRAM).lock
 else
 SAVEFILE ?= $(PROGRAM).save
 SCOREFILE ?= $(PROGRAM).scores
-LOCKFILE ?= $(PROGRAM).lock
 endif
 
 LANG_DEFS = -DDEFAULT_LANGUAGE=$(DEFAULT_LANGUAGE)
@@ -123,7 +121,6 @@ endif
 PROGRAM_DEFS = -DROGUE_PROGRAM_NAME=\"$(PROGRAM)\" \
 	-DDEFAULT_SAVE_FILE=\"$(SAVEFILE)\" \
 	-DSCORE_FILE=\"$(SCOREFILE)\" \
-	-DLOCK_FILE=\"$(LOCKFILE)\"
 
 CPPFLAGS += -I. $(CURSES_CFLAGS) $(LANG_DEFS) $(OPTION_DEFS) $(SCORE_DEFS) $(PROGRAM_DEFS)
 CFLAGS ?= -std=gnu89 -O2 -DUNIX -DMODERN_UNIX
@@ -216,7 +213,7 @@ dist.src:
 	  mv -f "$$output_tmp" "$$output"; \
 	  echo "Created $$output"
 
-# Build artifacts only. Never remove *.save, *.scores, *.lock or other game data.
+# Build artifacts only. Never remove *.save, *.scores or other game data.
 clean:
 	rm -f *.o jec/*.o windows/*.o *.win.o jec/*.win.o windows/*.win.o \
 		core a.out a.exe a.exe.stackdump rogue rogueclone3 rogueclone3j \

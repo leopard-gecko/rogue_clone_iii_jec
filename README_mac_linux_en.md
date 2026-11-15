@@ -86,9 +86,9 @@ sudo make install
 
 The default locations are `/usr/local/bin/rogue-clone` for the executable and `/usr/local/share/doc/rogue-clone/` for documentation. For a home-directory install, configure with `./configure --prefix="$HOME/.local"`, rebuild, then run `make install`. Use `make uninstall` to remove an installed copy.
 
-## 5. Save, score, and lock file locations
+## 5. Save and score file locations
 
-By default, `rogue-clone.save`, `rogue-clone.scores`, and `rogue-clone.lock` are written to the game's working directory. For a single custom data directory:
+By default, `rogue-clone.save` and `rogue-clone.scores` are written to the game's working directory. For a single custom data directory:
 
 ```sh
 ./configure --file-dir="$HOME/.local/share/rogue-clone"
@@ -98,14 +98,14 @@ make
 
 The directory selected with `--file-dir` is created automatically when needed **only during `make install`**. If you run the game without installing, create it first (for example, `mkdir -p "$HOME/.local/share/rogue-clone"`). The directory must be writable.
 
-Use `--program=NAME` to rename the executable, or `--save-file=FILE`, `--score-file=FILE`, and `--lock-file=FILE` to choose filenames. The `make` variables `PROGRAM` (or `PROG`), `FILEDIR`, `SAVEFILE`, `SCOREFILE`, and `LOCKFILE` are also supported.
+Use `--program=NAME` to rename the executable, or `--save-file=FILE` or `--score-file=FILE` to choose filenames. The `make` variables `PROGRAM` (or `PROG`), `FILEDIR`, `SAVEFILE`, and `SCOREFILE` are also supported.
 
 ## 6. Files and source distribution
 
 | File | Purpose |
 |---|---|
 | `rogue-clone` / `rogue-clone.exe` | Built executable (depending on OS) |
-| `rogue-clone.save` / `.scores` / `.lock` | Default game data files |
+| `rogue-clone.save` / `.scores` | Default game data files |
 | `configure` / `Makefile` / `Makefile.win` | Build and installation configuration |
 | `*.c` / `*.h` | Source files |
 | `README_mac_linux_ja.md` / `README_mac_linux_en.md` | macOS/Linux guides (Japanese/English) |

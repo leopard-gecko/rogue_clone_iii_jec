@@ -59,6 +59,8 @@ static char sccsid[] __attribute__((unused)) = "@(#)machdep.c	5.2 (Berkeley) 11/
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <pwd.h>
 
 #ifdef MODERN_UNIX
@@ -582,41 +584,58 @@ void md_exit(int status)
 	exit(status);
 }
 
-/* md_lock():
- *
- * This function is intended to give the user exclusive access to the
- * score file.  It does so by "creat"ing a lock file, which can only
- * be created if it does not already exist.  The file is deleted when
- * score file processing is finished.  The lock file should be located
- * in the same directory as the score file.  These full path names should
- * be defined for any particular site in rogue.h.  The constants SCORE_FILE
- * and LOCK_FILE define these file names.
- *
- * When the parameter 'l' is non-zero (true), a lock is requested.  Otherwise
- * the lock is released by removing the lock file.
- */
-
-void md_lock(boolean l)
+/* Lock the scoreboard itself (as in Rogue 5.4.5).  The caller owns
+ * the FILE stream; this module must never close its descriptor. */
+FILE *md_score_open(const char *path)
 {
-	short tries;
-	char *lock_file = LOCK_FILE;
+    int fd;
+    FILE *fp;
+    fd = open(path, O_RDWR | O_CREAT | O_EXCL, 0664);
+    if (fd < 0 && errno == EEXIST)
+        fd = open(path, O_RDWR);
+    if (fd < 0)
+        return NULL;
+    fp = fdopen(fd, "r+b");
+    if (fp == NULL)
+        (void) close(fd);
+    return fp;
+}
 
-	if (l) {
-		for (tries = 0; tries < 5; tries++) {
-			if (md_get_file_id(lock_file) == -1) {
-				if (creat(lock_file, 0444) != -1) {
-					break;
-				} else {
-					message(EN("cannot lock score file", "得点ファイルをロックできません。"), 0);
-				}
-			} else {
-				message(EN("waiting to lock score file", "得点ファイルのロックを待っています。"), 0);
-			}
-			sleep(2);
-		}
-	} else {
-		(void) unlink(lock_file);
-	}
+static int score_lock_fd = -1;
+
+int md_lock(FILE *fp, boolean acquire)
+{
+    int fd, attempt, err;
+    if (!acquire) {
+        if (score_lock_fd >= 0) {
+            (void) flock(score_lock_fd, LOCK_UN);
+            score_lock_fd = -1;
+        }
+        return 1;
+    }
+    if (score_lock_fd >= 0) {
+        errno = EBUSY;
+        return 0;
+    }
+    if (fp == NULL || (fd = fileno(fp)) < 0) {
+        errno = EBADF;
+        return 0;
+    }
+    for (attempt = 0; attempt <= 50; ++attempt) {
+        if (flock(fd, LOCK_EX | LOCK_NB) == 0) {
+            score_lock_fd = fd;
+            return 1;
+        }
+        err = errno;
+        if (err != EWOULDBLOCK && err != EAGAIN && err != EINTR) {
+            errno = err;
+            return 0;
+        }
+        if (attempt < 50)
+            usleep(100000);
+    }
+    errno = EWOULDBLOCK;
+    return 0;
 }
 
 /* md_shell():

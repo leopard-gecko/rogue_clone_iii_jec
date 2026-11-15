@@ -21,9 +21,9 @@
 #define ROGUE_PAIR_SCORE_HEADER 12
 #define ROGUE_PAIR_SCORE_REVERSE 13
 
-/* The game color values below use ANSI/xterm indexes, while PDCurses
- * WinCon uses Windows/BGR ordering for its first 16 curses color indexes.
- * Keep the Unix default definitions untouched. */
+/* The game color values below use ANSI/xterm indexes, while Windows
+ * PDCursesMod has its own indices for the first 16 curses colors, including
+ * with the VT backend.  Keep the Unix definitions untouched. */
 #ifdef _WIN32
 #define ROGUE_BASE_RED     1
 #define ROGUE_BASE_GREEN   2
@@ -62,8 +62,8 @@ static boolean use_precise_colors = 0;
 static void write_ansi(char *s)
 {
 #ifdef _WIN32
-	/* WinCon PDCursesMod uses the console API rather than VT escapes.
-	 * Never emit ESC sequences: they can appear literally in a console. */
+	/* The VT backend owns the curses screen.  Do not write escapes
+	 * behind its back and desynchronize the curses display. */
 	(void) s;
 #else
 	(void) write(1, s, strlen(s));
@@ -117,8 +117,8 @@ void rogue_prepare_input_attr(WINDOW *wn)
 }
 #endif
 
-/* The game's palettes use ANSI/xterm indices.  Only Windows needs
- * translation to PDCursesMod's WinCon color indices. */
+/* The game's palettes use ANSI/xterm indices.  Windows needs
+ * translation to PDCursesMod's color indices even with the VT backend. */
 #ifdef _WIN32
 #define rogue_platform_color rogue_win_platform_color
 #else
@@ -419,15 +419,27 @@ int rogue_addch(int ch)
 
 int rogue_clear(void)
 {
+#ifndef _WIN32
 	int row, col;
+#endif
 	int r;
 
+	/* On Windows, PDCursesMod VT uses the current background color when
+	 * clear() erases the window.  Do not also refresh and paint LINES x
+	 * COLS blank cells individually: the bottom-right cell may trigger
+	 * terminal autowrap/scroll, especially just after a VT resize.
+	 * Unix retains its original explicit background clearing behavior. */
+#ifdef _WIN32
+	r = clear();
+	if (use_color && color_ready)
+		(void) attrset(COLOR_PAIR(ROGUE_PAIR_NORMAL));
+	(void) move(0, 0);
+	return r;
+#else
 	r = clear();
 	if (use_color && color_ready) {
 		(void) refresh();
-#ifndef _WIN32
 		write_clear_background_ansi();
-#endif
 		(void) attrset(COLOR_PAIR(ROGUE_PAIR_NORMAL));
 		for (row = 0; row < LINES; row++) {
 			for (col = 0; col < COLS; col++) {
@@ -437,6 +449,7 @@ int rogue_clear(void)
 		move(0, 0);
 	}
 	return(r);
+#endif
 }
 
 

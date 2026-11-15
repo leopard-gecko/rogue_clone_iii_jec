@@ -37,7 +37,6 @@ Windowsでは `Makefile.win` が自動選択され、`rogue-clone.exe` が生成
 | 日本語を初期表示にする | `make japanese` |
 | 英語を初期表示にする | `make english` |
 | オリジナルに近い設定でビルド | `make original` |
-| VTバックエンドを使用する | `make clean` → `make PDC_BACKEND=vt` |
 
 通常の **`make`** は、カラー表示などを有効にした遊びやすい初期設定です。**`make original`** は、元のClone IIIに近い操作・表示設定で、英語を初期言語とします。どちらもゲーム内容は同じで、日英の表示切り替え機能は利用できます。
 
@@ -52,7 +51,6 @@ Windowsでは `Makefile.win` が自動選択され、`rogue-clone.exe` が生成
 
 `jump`・`passgo`・`color`・`cursor` などはゲーム中でも変更できますが、`ALLSCORES` はビルド時の設定です。設定を変更してビルドし直す場合は `make clean` を実行してください。
 
-通常はPDCursesModの **WinCon** バックエンドを使用します。
 
 ## 3. 起動
 
@@ -67,7 +65,6 @@ Windowsでは `Makefile.win` が自動選択され、`rogue-clone.exe` が生成
 ダブルクリック起動時、既定のセーブファイルが見つかった場合は、起動メニューが表示されます。`R` またはEnterで再開、`N` で新規ゲーム、`F` で別のセーブファイルを選択、`Q` で終了します。既定のセーブファイルがない場合は、そのまま新規ゲームを始めます。新規ゲームを選んでも既存のセーブファイルは削除されません。
 
 セーブファイルを `rogue-clone.exe` にドラッグ＆ドロップすると、そのファイルを指定して再開します。日本語や空白を含むファイル名にも対応しています。PowerShellなどからファイル名を引数で渡す従来の起動方法も使用できます。
-
 
 ## 4. Windowsでの環境変数の設定
 
@@ -93,7 +90,8 @@ rogue-clone.exe
 
 ## 5. セーブ・スコアなどの保存先
 
-標準では `rogue-clone.save`、`rogue-clone.scores`、`rogue-clone.lock` がゲームの作業ディレクトリに作られます。**配布用のEXEは `FILEDIR` を指定せずにビルド**し、ビルドしたPC固有の保存先を埋め込まないようにしてください。
+標準では `rogue-clone.save`、`rogue-clone.scores` がゲームの作業ディレクトリに作られます。**配布用のEXEは `FILEDIR` を指定せずにビルド**し、ビルドしたPC固有の保存先を埋め込まないようにしてください。
+
 
 個人用にWindowsの「保存したゲーム」フォルダを使う場合：
 
@@ -111,14 +109,14 @@ make clean
 make FILEDIR='C:/Games/Rogue Clone III'
 ```
 
-通常の `FILEDIR` 指定ではフォルダは自動作成されません。事前に作成し、書き込み権限を確認してください。`SAVEFILE=FILE`・`SCOREFILE=FILE`・`LOCKFILE=FILE` で個々のファイル名を指定でき、`FILEDIR` より優先されます。
+通常の `FILEDIR` 指定ではフォルダは自動作成されません。事前に作成し、書き込み権限を確認してください。`SAVEFILE=FILE` または `SCOREFILE=FILE` で個々のファイル名を指定でき、`FILEDIR` より優先されます。
 
 ## 6. ファイルと配布
 
 | ファイル | 用途 |
 |---|---|
 | `rogue-clone` / `rogue-clone.exe` | ビルド後のゲーム本体（OSにより異なる） |
-| `rogue-clone.save` / `.scores` / `.lock` | 既定のゲームデータファイル |
+| `rogue-clone.save` / `.scores` | 既定のゲームデータファイル |
 | `configure` / `Makefile` / `Makefile.win` | ビルド・インストールの設定 |
 | `*.c` / `*.h` | ソースコード |
 | `README_mac_linux_ja.md` / `README_mac_linux_en.md` | macOS / Linux用の日本語・英語説明書 |

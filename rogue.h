@@ -178,9 +178,6 @@
 #ifndef DEFAULT_SAVE_FILE
 #define DEFAULT_SAVE_FILE ROGUE_PROGRAM_NAME ".save"
 #endif
-#ifndef LOCK_FILE
-#define LOCK_FILE ROGUE_PROGRAM_NAME ".lock"
-#endif
 
 #ifndef DEFAULT_JUMP
 #define DEFAULT_JUMP 1
@@ -607,7 +604,9 @@ int md_gseed(void);
 void md_heed_signals(void);
 void md_ignore_signals(void);
 int md_link_count(char *fname);
-void md_lock(boolean l);
+/* Lock the opened score stream on every supported OS. */
+int md_lock(FILE *fp, boolean acquire);
+FILE *md_score_open(const char *path);
 char * md_malloc(int n);
 void md_shell(char *shell);
 void md_sleep(int nsecs);

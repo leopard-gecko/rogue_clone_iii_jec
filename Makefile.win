@@ -1,9 +1,13 @@
-# Native Windows 10/11 (64-bit), MSYS2 UCRT64 + PDCursesMod.
+# Native Windows 10/11 (64-bit), MSYS2 UCRT64 + PDCursesMod VT.
 # Invoked automatically by the top-level Makefile in MSYS2 UCRT64.
 # Manual form: make -f Makefile.win
 CC = gcc
 MINGW_PREFIX ?= /ucrt64
-PDC_BACKEND ?= wincon
+# Windows uses only the PDCursesMod VT backend, as in Rogue 5.4.5 JEC.
+# Reject the removed selector so old build commands cannot silently differ.
+ifneq ($(origin PDC_BACKEND),undefined)
+$(error PDC_BACKEND is obsolete; Windows builds always use the VT backend)
+endif
 WINDRES ?= windres
 PROG ?=
 PROGRAM ?= $(if $(PROG),$(PROG),rogue-clone)
@@ -16,15 +20,6 @@ ALLSCORES ?= 1
 FILEDIR ?=
 SAVEFILE ?=
 SCOREFILE ?=
-LOCKFILE ?=
-
-ifeq ($(PDC_BACKEND),vt)
-PDC_LIB := pdcurses_vt
-else ifeq ($(PDC_BACKEND),wincon)
-PDC_LIB := pdcurses_wincon
-else
-$(error PDC_BACKEND must be wincon or vt)
-endif
 
 # Windows-specific shorthand, like Rogue 5.4.5 JEC, resolves the *real*
 # Saved Games known folder, including folder redirection. Resolve only for
@@ -50,18 +45,12 @@ endif
 ifeq ($(strip $(SCOREFILE)),)
 SCOREFILE := $(RESOLVED_FILEDIR)/$(PROGRAM).scores
 endif
-ifeq ($(strip $(LOCKFILE)),)
-LOCKFILE := $(RESOLVED_FILEDIR)/$(PROGRAM).lock
-endif
 else
 ifeq ($(strip $(SAVEFILE)),)
 SAVEFILE := $(PROGRAM).save
 endif
 ifeq ($(strip $(SCOREFILE)),)
 SCOREFILE := $(PROGRAM).scores
-endif
-ifeq ($(strip $(LOCKFILE)),)
-LOCKFILE := $(PROGRAM).lock
 endif
 endif
 
@@ -79,12 +68,10 @@ LDFLAGS ?=
 shell_quote = '$(subst ','"'"',$(1))'
 USER_CPPFLAGS := $(CPPFLAGS)
 CPPFLAGS := -D_WIN32 -DPDC_WIDE=1 -DPDC_FORCE_UTF8=1 \
-            $(if $(filter vt,$(PDC_BACKEND)),-DCLONE_PDC_VT=1,) \
             -I. -I$(MINGW_PREFIX)/include/pdcurses \
             -DROGUE_PROGRAM_NAME=$(call shell_quote,"$(PROGRAM)") \
             -DDEFAULT_SAVE_FILE=$(call shell_quote,"$(SAVEFILE)") \
             -DSCORE_FILE=$(call shell_quote,"$(SCOREFILE)") \
-            -DLOCK_FILE=$(call shell_quote,"$(LOCKFILE)") \
             -DDEFAULT_LANGUAGE=$(DEFAULT_LANGUAGE) \
             -DDEFAULT_JUMP=$(DEFAULT_JUMP) \
             -DDEFAULT_PASSGO=$(DEFAULT_PASSGO) \
@@ -92,7 +79,7 @@ CPPFLAGS := -D_WIN32 -DPDC_WIDE=1 -DPDC_FORCE_UTF8=1 \
             -DDEFAULT_CURSOR=$(DEFAULT_CURSOR) \
             $(if $(filter 1,$(ALLSCORES)),-DALLSCORES,) \
             $(USER_CPPFLAGS) $(EXTRA_CPPFLAGS)
-LDLIBS := -l$(PDC_LIB) -lwinmm -luser32 -lgdi32 -lcomdlg32 -lshell32 -lshlwapi -ladvapi32
+LDLIBS := -lpdcurses_vt -lwinmm -luser32 -lgdi32 -lcomdlg32 -lshell32 -lshlwapi -ladvapi32
 
 .PHONY: all clean distclean dist.src japanese english original prepare-filedir
 all: $(PROGRAM).exe

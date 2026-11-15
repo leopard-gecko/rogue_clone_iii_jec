@@ -67,13 +67,28 @@ int init(int argc, char **argv)
 		(void) setenv("TERM", "xterm-256color", 1);
 	}
 #endif
-#ifdef _WIN32
-	rogue_win_setup_console_encoding();
-#endif
+	/* PDCursesMod VT initializes the console itself, as in 5.4.5 JEC. */
 	initscr();
 #ifdef _WIN32
-	/* Retry the Windows Terminal/ConPTY request once PDCurses is active. */
 	rogue_win_retry_direct_launch_resize();
+	/* The VT resize above can change the real window AFTER initscr() has
+	 * sampled its dimensions.  If we keep stale LINES/COLS (e.g. 35x80)
+	 * and subsequently clear the screen, the rows beyond the new 24-line
+	 * viewport can scroll the entire dungeon off the top of the terminal.
+	 * Match 5.4.5's 80x24 game area by updating PDCurses' logical screen
+	 * before any game drawing.  Only resize an approved direct launch;
+	 * existing cmd/PowerShell/MSYS2 terminals are not resized. */
+	if (rogue_win_is_direct_launch() &&
+	    (LINES != DROWS || COLS != DCOLS)) {
+		if (resize_term(DROWS, DCOLS) == ERR) {
+			clean_up(EN("cannot resize the game screen",
+			            "ゲーム画面の大きさを変更できません。"));
+		}
+	}
+	/* After a terminal resize, fully repaint using the new geometry. */
+	if (rogue_win_is_direct_launch()) {
+		clearok(stdscr, TRUE);
+	}
 	(void) keypad(stdscr, TRUE);
 #endif
 	if ((LINES < DROWS) || (COLS < DCOLS)) {

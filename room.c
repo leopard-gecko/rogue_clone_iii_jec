@@ -91,6 +91,17 @@ static int opt_is_language(int i)
 	return((!options[i].is_bool) && (options[i].strval == &language_option));
 }
 
+/* Refresh the option values before restoring non-BMP glyphs on Windows.
+ * The PDCurses VT backend can narrow an emoji to 16 bits while painting.
+ * The workaround matches Rogue 5.4.5 JEC and stays option-screen-only. */
+static void opt_refresh(void)
+{
+    refresh();
+#ifdef _WIN32
+    rogue_win_vt_restore_nonbmp_rows(NOPTS);
+#endif
+}
+
 static void opt_redraw_all(void)
 {
 	short i;
@@ -107,7 +118,7 @@ static void opt_change_language(int i, char *code)
 	opt_redraw_all();
 	print_stats(STAT_ALL);
 	opt_go(i);
-	refresh();
+	opt_refresh();
 }
 
 static char *opt_language_display(void)
@@ -168,7 +179,7 @@ static int edit_option_string(int row, int first_ch)
 	buf[len] = 0;
 	cursor = len;
 	opt_draw_edit(row, buf, cursor);
-	refresh();
+	opt_refresh();
 	rogue_show_cursor(1);
 
 	for (;;) {
@@ -214,11 +225,13 @@ static int edit_option_string(int row, int first_ch)
 			}
 		}
 		opt_draw_edit(row, buf, cursor);
-		refresh();
+		opt_refresh();
 		rogue_show_cursor(1);
 		ch = rgetchar();
 	}
 	(void) strcpy(*(options[row].strval), buf);
+#ifdef _WIN32
+#endif
 	opt_show(row);
 	return(ch);
 }
@@ -715,7 +728,7 @@ void edit_opts(void)
 #endif
 
 	while (!done) {
-		refresh();
+		opt_refresh();
 		rogue_show_cursor(1);
 		ch = rgetchar();
 CH:
@@ -736,7 +749,7 @@ CH:
 		case '\015':
 			if (i == (NOPTS - 1)) {
 				mvaddstr(NOPTS, 0, press_space);
-				refresh();
+				opt_refresh();
 				wait_for_ack();
 				done = 1;
 			} else {
@@ -841,6 +854,8 @@ void opt_show(int i)
 		s = *(opt->strval);
 	}
 	/* Keep long names from spilling into the next option line. */
+#ifdef _WIN32
+#endif
 	rogue_addstr_fit(s, DCOLS - jrogue_text_width(opt_prompt(i)) - 1);
 }
 
@@ -910,8 +925,9 @@ void do_shell(void)
 
 	/* Restore PDCurses modes after the child has finished.  The Windows
 	 * console code page may have been changed by a shell command. */
-	rogue_win_setup_console_encoding();
 	reset_prog_mode();
+	/* PDCurses owns VT state; only restore UTF-8 after the child shell. */
+	rogue_win_restore_shell_encoding();
 	start_window();
 	rogue_apply_color_mode();
 	(void) overwrite(saved, stdscr);

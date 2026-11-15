@@ -1,5 +1,6 @@
 /* Runtime language support for Rogue Clone III. */
 #include <stdlib.h>
+#include <locale.h>
 #include <string.h>
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -9,6 +10,18 @@
 #endif
 #endif
 #include "rogue.h"
+
+/* Use UTF-8 for text processing on Windows, just like Rogue 5.4.5 JEC.
+ * The startup game language is chosen separately from Windows UI language. */
+void rogue_init_locale(void)
+{
+#ifdef _WIN32
+    if (setlocale(LC_ALL, ".UTF8") == NULL)
+        (void)setlocale(LC_ALL, "");
+#else
+    (void)setlocale(LC_ALL, "");
+#endif
+}
 
 int rogue_lang_is_japanese = DEFAULT_JAPANESE;
 char *language_option = (char *) 0;

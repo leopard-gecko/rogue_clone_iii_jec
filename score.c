@@ -15,6 +15,7 @@ static char sccsid[] __attribute__((unused)) = "@(#)score.c	5.2 (Berkeley) 11/25
 #endif /* not lint */
 
 #include <stdio.h>
+#include <errno.h>
 #ifndef _WIN32
 #include <unistd.h>
 #else
@@ -29,6 +30,24 @@ static char sccsid[] __attribute__((unused)) = "@(#)score.c	5.2 (Berkeley) 11/25
 extern char login_name[];
 extern char *m_names[];
 static void format_score_reason(char *buf, int len, int other, int level, int mchar, int amulet);
+
+/* Track the stream so error paths also close it *before* releasing the lock. */
+static FILE *score_stream = NULL;
+
+static int score_close_locked(void)
+{
+    FILE *fp = score_stream;
+    int ok = 1;
+    score_stream = NULL;
+    /* Explicitly flush before releasing the lock: fclose must not
+     * perform any pending score writes after another process enters. */
+    if (fp != NULL && fflush(fp) != 0)
+        ok = 0;
+    (void) md_lock(fp, 0);
+    if (fp != NULL && fclose(fp) != 0)
+        ok = 0;
+    return ok;
+}
 extern short max_level;
 extern boolean score_only, no_skull, msg_cleared;
 extern char *byebye_string, *nick_name;
@@ -145,6 +164,9 @@ if (rogue_lang_is_japanese) {
 		rogue_addstr_fit(press_space, DCOLS - 1);
 		md_slurp();
 		refresh();
+#ifdef _WIN32
+		rogue_win_vt_restore_nonbmp_rows(DROWS);
+#endif
 		wait_for_ack();
 		msg_cleared = 1;
 	} else {
@@ -241,29 +263,37 @@ void put_scores(object *monster, short other)
 	int score_line_len = SCORE_LINE_LEN;
 	boolean pause = score_only;
 
-	md_lock(1);
-
-	/*
-	 * Do not use "a+" here.  Modern Unix/macOS append mode forces all
-	 * writes to the end of the file, even after rewind(), which corrupts
-	 * the fixed-size score file after the first rewrite.
-	 */
-	if ((fp = fopen(SCORE_FILE, "r+b")) == NULL) {
-		if ((fp = fopen(SCORE_FILE, "w+b")) == NULL) {
-			message(EN("cannot read/write/create score file", "得点ファイルがオープンできません。"), 0);
+    /* Create atomically if absent; never truncate another process's scores. */
+    fp = md_score_open(SCORE_FILE);
+    if (fp == NULL) {
+        message(EN("cannot read/write/create score file", "得点ファイルがオープンできません。"), 0);
+        sf_error();
+        return;
+    }
+    score_stream = fp;
+    if (!md_lock(fp, 1)) {
+        message(EN("cannot lock score file", "得点ファイルをロックできません。"), 0);
+        (void) score_close_locked();
+        move(DROWS-1, 0);
+        clrtoeol();
+        rogue_addstr_fit(press_space, DCOLS - 1);
+        refresh();
+        wait_for_ack();
+        clean_up("");
+        return;
+    }
+	if (fseek(fp, 0L, SEEK_END) != 0)
+		sf_error();
+	file_size = ftell(fp);
+	if (file_size < 0)
+		sf_error();
+	if (file_size > 0) {
+		if ((file_size % SCORE_RECORD_LEN) == 0) {
+			score_line_len = SCORE_LINE_LEN;
+		} else if ((file_size % OLD_SCORE_RECORD_LEN) == 0) {
+			score_line_len = OLD_SCORE_LINE_LEN;
+		} else {
 			sf_error();
-		}
-	}
-	if (fseek(fp, 0L, SEEK_END) == 0) {
-		file_size = ftell(fp);
-		if (file_size > 0) {
-			if ((file_size % SCORE_RECORD_LEN) == 0) {
-				score_line_len = SCORE_LINE_LEN;
-			} else if ((file_size % OLD_SCORE_RECORD_LEN) == 0) {
-				score_line_len = OLD_SCORE_LINE_LEN;
-			} else {
-				sf_error();
-			}
 		}
 	}
 	rewind(fp);
@@ -379,20 +409,31 @@ void put_scores(object *monster, short other)
 		}
 	}
 	if (rank < 10) {
-		fflush(fp);
-		#ifdef _WIN32
-		(void) _chsize_s(_fileno(fp), (long long) ne * SCORE_RECORD_LEN);
+		/* Flush and truncate while we still own the exclusive lock. */
+		if (fflush(fp) != 0)
+			sf_error();
+#ifdef _WIN32
+		if (_chsize_s(_fileno(fp), (long long) ne * SCORE_RECORD_LEN) != 0)
+			sf_error();
 #else
-		(void) ftruncate(fileno(fp), (off_t) ne * SCORE_RECORD_LEN);
+		if (ftruncate(fileno(fp), (off_t) ne * SCORE_RECORD_LEN) != 0)
+			sf_error();
 #endif
 	}
-	md_lock(0);
+	/* fclose must finish before another process can acquire the lock. */
+	if (!score_close_locked())
+		sf_error();
 	refresh();
-	fclose(fp);
+#ifdef _WIN32
+	rogue_win_vt_restore_nonbmp_rows(DROWS);
+#endif
 	move(DROWS-1, 0);
 	clrtoeol();
 	rogue_addstr_fit(press_space, DCOLS - 1);
 	refresh();
+#ifdef _WIN32
+	rogue_win_vt_restore_nonbmp_rows(DROWS);
+#endif
 	wait_for_ack();
 	(void) pause;
 	clean_up("");
@@ -615,7 +656,11 @@ void nickize(char *buf, char *score, char *n_name)
 		mchar = 0;
 		if (sscanf(reason, "@RC3:%d:%d:%c:%d", &other, &level, &mchar, &amulet) >= 3) {
 			format_score_reason(rbuf, sizeof(rbuf), other, level, mchar, amulet);
-			(void) snprintf(buf, ROGUE_DESC_LEN, "%.*s%s: %s", 15, score,
+			/* When the optional nickname is empty, use only the login-name
+			 * field preceding the colon.  The @RC3 marker is internal data,
+			 * not part of the printable name or cause of death. */
+			(void) snprintf(buf, ROGUE_DESC_LEN, "%.*s%.*s: %s", 15, score,
+				(n_name[0] ? (int)strlen(n_name) : (int)i - 15),
 				(n_name[0] ? n_name : score + 15), rbuf);
 			buf[ROGUE_DESC_LEN - 1] = 0;
 			return;
@@ -696,7 +741,7 @@ void center(short row, char *buf)
 
 void sf_error(void)
 {
-	md_lock(0);
+	(void) score_close_locked();
 	message("", 1);
 	clean_up(EN("sorry, score file is out of order", "得点ファイルが正しくありません。"));
 }

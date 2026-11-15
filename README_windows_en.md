@@ -37,7 +37,6 @@ Windows automatically selects `Makefile.win` and creates `rogue-clone.exe`. Neit
 | Start in Japanese | `make japanese` |
 | Start in English | `make english` |
 | Use defaults closer to the original | `make original` |
-| Use the VT backend | `make clean` → `make PDC_BACKEND=vt` |
 
 The regular **`make`** build enables convenient defaults such as color. **`make original`** uses display and control defaults closer to the original Clone III and starts in English. Both builds retain the same game and bilingual display support.
 
@@ -52,7 +51,6 @@ The regular **`make`** build enables convenient defaults such as color. **`make 
 
 `jump`, `passgo`, `color`, and `cursor` can be changed during play. `ALLSCORES` is a build-time setting. Run `make clean` before rebuilding with different defaults.
 
-The default PDCursesMod drawing backend is **WinCon**.
 
 ## 3. Launch
 
@@ -67,7 +65,6 @@ The game display is fixed at 80 columns × 24 rows. A direct double-click launch
 When launched by double-clicking, if the default save file exists, a menu offers `R` or Enter to resume, `N` to start a new game, `F` to choose a different save file, and `Q` to quit. If there is no default save, the game starts normally. Starting a new game does not delete the existing save.
 
 You can also drag a save file onto `rogue-clone.exe` to resume that specific file. Unicode file names (including Japanese text and spaces) are supported. Passing a save filename as an argument from PowerShell or another shell continues to work as before.
-
 
 ## 4. Setting Windows environment variables
 
@@ -91,9 +88,10 @@ These values apply only to programs launched from that shell.
 
 **For double-click launches:** Press `Win + R`, run `sysdm.cpl`, and open **Advanced → Environment Variables**. Under **User variables**, create or edit `ROGUEOPTS`. Restart the game and any open shells. If the value is not picked up, sign out of Windows and sign in again. Delete the variable in the same dialog to remove the setting.
 
-## 5. Save, score, and lock file locations
+## 5. Save and score file locations
 
-By default, `rogue-clone.save`, `rogue-clone.scores`, and `rogue-clone.lock` are written to the game's working directory. **For a redistributable EXE, leave `FILEDIR` unset** so that the build computer's private path is not embedded.
+By default, `rogue-clone.save` and `rogue-clone.scores` are written to the game's working directory. **For a redistributable EXE, leave `FILEDIR` unset** so that the build computer's private path is not embedded.
+
 
 To use the current user's Windows Saved Games folder for a personal build:
 
@@ -111,14 +109,14 @@ make clean
 make FILEDIR='C:/Games/Rogue Clone III'
 ```
 
-A normal `FILEDIR` value does not create its directory. Create it first and ensure write permission. Use `SAVEFILE=FILE`, `SCOREFILE=FILE`, and `LOCKFILE=FILE` to set individual filenames; these take precedence over `FILEDIR`.
+A normal `FILEDIR` value does not create its directory. Create it first and ensure write permission. Use `SAVEFILE=FILE` or `SCOREFILE=FILE` to set individual filenames; these take precedence over `FILEDIR`.
 
 ## 6. Files and distribution
 
 | File | Purpose |
 |---|---|
 | `rogue-clone` / `rogue-clone.exe` | Built executable (depending on OS) |
-| `rogue-clone.save` / `.scores` / `.lock` | Default game data files |
+| `rogue-clone.save` / `.scores` | Default game data files |
 | `configure` / `Makefile` / `Makefile.win` | Build and installation configuration |
 | `*.c` / `*.h` | Source files |
 | `README_mac_linux_ja.md` / `README_mac_linux_en.md` | macOS/Linux guides (Japanese/English) |

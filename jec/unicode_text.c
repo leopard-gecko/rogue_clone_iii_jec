@@ -143,6 +143,23 @@ read_scalar(const unsigned char *s, size_t at, size_t limit, uint32_t *cp)
     return at + count;
 }
 
+/* Strict scalar validation shared by interactive input and Unicode editing. */
+size_t
+jrogue_utf8_scalar_length(const char *bytes, size_t available)
+{
+    uint32_t cp;
+    size_t end;
+    if (!bytes || !available) return 0;
+    end = read_scalar((const unsigned char *)bytes, 0, available, &cp);
+    if (cp == 0xfffd) {
+        /* U+FFFD is itself a valid encoded scalar (EF BF BD). */
+        if (available < 3 || (unsigned char)bytes[0] != 0xef ||
+            (unsigned char)bytes[1] != 0xbf ||
+            (unsigned char)bytes[2] != 0xbd) return 0;
+    }
+    return end;
+}
+
 /* Return the end of a cluster whose start is a known byte boundary. */
 static size_t
 cluster_end(const unsigned char *s, size_t at, size_t limit)
@@ -237,6 +254,11 @@ static int
 scalar_cells(uint32_t cp)
 {
     if (cp == 0x200d || is_extend(cp)) return 0;
+#ifdef _WIN32
+    /* Windows VT repaint forces U+2694 into emoji presentation (VS16).
+     * Reserve both cells in our layout to keep the edit cursor aligned. */
+    if (cp == 0x2694) return 2;
+#endif
     if (cp < 0x1100) return 1;
     if ((cp >= 0x1100 && cp <= 0x115f) ||
         (cp >= 0x2329 && cp <= 0x232a) ||

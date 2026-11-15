@@ -88,7 +88,8 @@ sudo make install
 
 ## 5. セーブ・スコアなどの保存先
 
-標準では `rogue-clone.save`、`rogue-clone.scores`、`rogue-clone.lock` がゲームの作業ディレクトリに作られます。まとめて別の保存先を指定する例：
+標準では `rogue-clone.save`、`rogue-clone.scores` がゲームの作業ディレクトリに作られます。まとめて別の保存先を指定する例：
+
 
 ```sh
 ./configure --file-dir="$HOME/.local/share/rogue-clone"
@@ -98,14 +99,14 @@ make
 
 `--file-dir` で指定したディレクトリは、**`make install` 実行時にのみ**必要に応じて自動作成されます。インストールせずに実行する場合は、先に `mkdir -p "$HOME/.local/share/rogue-clone"` などで作成してください。保存先には書き込み権限が必要です。
 
-実行ファイル名は `--program=NAME` で、個々のファイル名は `--save-file=FILE`、`--score-file=FILE`、`--lock-file=FILE` で変更できます。`make` の変数 `PROGRAM`（または `PROG`）、`FILEDIR`、`SAVEFILE`、`SCOREFILE`、`LOCKFILE` も使用できます。
+実行ファイル名は `--program=NAME` で、個々のファイル名は `--save-file=FILE`、`--score-file=FILE` で変更できます。`make` の変数 `PROGRAM`（または `PROG`）、`FILEDIR`、`SAVEFILE`、`SCOREFILE` も使用できます。
 
 ## 6. ファイルとソース配布
 
 | ファイル | 用途 |
 |---|---|
 | `rogue-clone` / `rogue-clone.exe` | ビルド後のゲーム本体（OSにより異なる） |
-| `rogue-clone.save` / `.scores` / `.lock` | 既定のゲームデータファイル |
+| `rogue-clone.save` / `.scores` | 既定のゲームデータファイル |
 | `configure` / `Makefile` / `Makefile.win` | ビルド・インストールの設定 |
 | `*.c` / `*.h` | ソースコード |
 | `README_mac_linux_ja.md` / `README_mac_linux_en.md` | macOS / Linux用の日本語・英語説明書 |
