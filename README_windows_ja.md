@@ -111,6 +111,6 @@ make FILEDIR='C:/Games/Rogue Clone III'
 
 ## 6. Windows版の配布
 
-Windows版のアイコンには `windows/rogue-clone-iii.ico` と `windows/rogue-icon.rc` を使用します。`windows/windows-saved-games.ps1` は「保存したゲーム」フォルダを取得するビルド用スクリプトです。EXEを別のPCに配布するときは、必要な実行時DLLも確認してください。
+Windows版のアイコンには `windows/rogue-clone-iii.ico` と `windows/rogue-icon.rc` を使用します。`windows/windows-saved-games.ps1` は「保存したゲーム」フォルダを取得するビルド用スクリプトです。
 
 案内書と他のOS向けのREADMEは[リポジトリのREADME](README.md)から参照できます。

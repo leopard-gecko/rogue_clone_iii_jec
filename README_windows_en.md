@@ -111,6 +111,6 @@ A normal `FILEDIR` value does not create its directory. Create it first and ensu
 
 ## 6. Windows distribution
 
-The Windows icon uses `windows/rogue-clone-iii.ico` and `windows/rogue-icon.rc`. The `windows/windows-saved-games.ps1` script locates the Saved Games folder at build time. Check for required runtime DLLs before distributing the EXE to other PCs.
+The Windows icon uses `windows/rogue-clone-iii.ico` and `windows/rogue-icon.rc`. The `windows/windows-saved-games.ps1` script locates the Saved Games folder at build time. 
 
 For the game guide and other platform READMEs, see the [repository README](README.md).
