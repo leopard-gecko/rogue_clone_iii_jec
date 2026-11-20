@@ -21,12 +21,21 @@ FILEDIR ?=
 SAVEFILE ?=
 SCOREFILE ?=
 
+# End-user Windows ZIP; defaults match the published Clone III executable names.
+# The ZIP contains a fixed top-level folder named "Rogue Clone III".
+# Override these variables to package a separately named edition.
+DIST_WIN_NAME ?= rogue_clone-iii.jec.004_win
+DIST_WIN_PROGRAM ?= rogue-c
+DIST_WIN_ORIGINAL ?= $(DIST_WIN_PROGRAM)_original
+DIST_WIN_SAVEFILE ?= $(DIST_WIN_PROGRAM).save
+DIST_WIN_SCOREFILE ?= $(DIST_WIN_PROGRAM).scores
+
 # Windows-specific shorthand, like Rogue 5.4.5 JEC, resolves the *real*
 # Saved Games known folder, including folder redirection. Resolve only for
 # targets that build, not for 'clean'.  A distributable exe should instead
 # use the default, unset FILEDIR (which follows its working directory).
 ifeq ($(strip $(FILEDIR)),saved-games)
-ifneq ($(filter-out clean dist.src distclean,$(if $(strip $(MAKECMDGOALS)),$(MAKECMDGOALS),all)),)
+ifneq ($(filter-out clean dist.src dist.win distclean,$(if $(strip $(MAKECMDGOALS)),$(MAKECMDGOALS),all)),)
 SAVED_GAMES_FILEDIR := $(shell powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./windows/windows-saved-games.ps1)
 ifeq ($(strip $(SAVED_GAMES_FILEDIR)),)
 $(error Cannot resolve Windows Saved Games directory)
@@ -81,7 +90,7 @@ CPPFLAGS := -D_WIN32 -DPDC_WIDE=1 -DPDC_FORCE_UTF8=1 \
             $(USER_CPPFLAGS) $(EXTRA_CPPFLAGS)
 LDLIBS := -lpdcurses_vt -lwinmm -luser32 -lgdi32 -lcomdlg32 -lshell32 -lshlwapi -ladvapi32
 
-.PHONY: all clean distclean dist.src japanese english original prepare-filedir
+.PHONY: all clean distclean dist.src dist.win japanese english original prepare-filedir
 all: $(PROGRAM).exe
 
 ifeq ($(AUTO_PREPARE_FILEDIR),1)
@@ -122,6 +131,54 @@ english:
 original:
 	$(MAKE) -f Makefile.win clean
 	$(MAKE) -f Makefile.win all DEFAULT_LANGUAGE=$(if $(filter command line,$(origin DEFAULT_LANGUAGE)),$(DEFAULT_LANGUAGE),2) DEFAULT_JUMP=1 DEFAULT_PASSGO=0 DEFAULT_COLOR=0 DEFAULT_CURSOR=1 ALLSCORES=0
+
+# Package only Windows executables and end-user documentation (no build
+# tools, game data, test files or diagnostic logs). This follows Rogue 5.2's
+# staging/zip approach, but makes both normal and original-settings editions.
+# Each edition is rebuilt from clean objects so build-time defaults cannot
+# leak from a previous build. Both binaries use the same save/score filenames.
+# Suppress FILEDIR here to avoid embedding a developer's personal path.
+# ZIP is optional for ordinary builds: install it with `pacman -S --needed zip`.
+dist.win:
+	@command -v zip >/dev/null 2>&1 || { \
+	  echo 'dist.win requires zip: pacman -S --needed zip' >&2; exit 1; }
+	@set -eu; \
+	  for name in '$(DIST_WIN_NAME)' '$(DIST_WIN_PROGRAM)' '$(DIST_WIN_ORIGINAL)' \
+	      '$(DIST_WIN_SAVEFILE)' '$(DIST_WIN_SCOREFILE)'; do \
+	    case "$$name" in ''|.|..|*[!A-Za-z0-9_.-]*) \
+	      echo "dist.win: invalid package or file name: $$name" >&2; exit 1;; \
+	    esac; \
+	  done; \
+	  test '$(DIST_WIN_PROGRAM)' != '$(DIST_WIN_ORIGINAL)' || { \
+	    echo 'dist.win: normal and original program names must differ' >&2; exit 1; }; \
+	  $(MAKE) -f Makefile.win clean PROGRAM='$(DIST_WIN_PROGRAM)' FILEDIR= \
+	      SAVEFILE='$(DIST_WIN_SAVEFILE)' SCOREFILE='$(DIST_WIN_SCOREFILE)'; \
+	  $(MAKE) -f Makefile.win all PROGRAM='$(DIST_WIN_PROGRAM)' FILEDIR= \
+	      SAVEFILE='$(DIST_WIN_SAVEFILE)' SCOREFILE='$(DIST_WIN_SCOREFILE)' \
+	      DEFAULT_LANGUAGE=0 DEFAULT_JUMP=0 DEFAULT_PASSGO=1 \
+	      DEFAULT_COLOR=1 DEFAULT_CURSOR=0 ALLSCORES=1; \
+	  $(MAKE) -f Makefile.win clean PROGRAM='$(DIST_WIN_ORIGINAL)' FILEDIR= \
+	      SAVEFILE='$(DIST_WIN_SAVEFILE)' SCOREFILE='$(DIST_WIN_SCOREFILE)'; \
+	  $(MAKE) -f Makefile.win all PROGRAM='$(DIST_WIN_ORIGINAL)' FILEDIR= \
+	      SAVEFILE='$(DIST_WIN_SAVEFILE)' SCOREFILE='$(DIST_WIN_SCOREFILE)' \
+	      DEFAULT_LANGUAGE=2 DEFAULT_JUMP=1 DEFAULT_PASSGO=0 \
+	      DEFAULT_COLOR=0 DEFAULT_CURSOR=1 ALLSCORES=0; \
+	  tmp=$$(mktemp -d "$${TMPDIR:-/tmp}/rogue-clone-win.XXXXXX"); \
+	  trap 'rm -rf "$$tmp"' 0 HUP INT TERM; \
+	  stage="$$tmp/Rogue Clone III"; \
+	  mkdir -p "$$stage"; \
+	  cp '$(DIST_WIN_PROGRAM).exe' '$(DIST_WIN_ORIGINAL).exe' "$$stage/"; \
+	  cp LICENSE.txt "$$stage/LICENSE.txt"; \
+	  for language in ja en; do \
+	    sed -e 's|@PROGRAM@|$(DIST_WIN_PROGRAM)|g' \
+	        -e 's|@ORIGINAL@|$(DIST_WIN_ORIGINAL)|g' \
+	        -e 's|@SAVEFILE@|$(DIST_WIN_SAVEFILE)|g' \
+	        -e 's|@SCOREFILE@|$(DIST_WIN_SCOREFILE)|g' \
+	        "windows/README_binary_$$language.txt" > "$$stage/README_$$language.txt"; \
+	  done; \
+	  (cd "$$tmp" && zip -q -r archive.zip "Rogue Clone III"); \
+	  mv -f "$$tmp/archive.zip" '$(CURDIR)/$(DIST_WIN_NAME).zip'; \
+	  echo 'Created $(DIST_WIN_NAME).zip'
 
 # Use the exact same safe source-package recipe as on Mac/Linux.  Forcing
 # ROGUE_BUILD=unix only selects that Makefile branch; no Unix binary is built.

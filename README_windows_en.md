@@ -111,6 +111,16 @@ A normal `FILEDIR` value does not create its directory. Create it first and ensu
 
 ## 6. Windows distribution
 
-The Windows icon uses `windows/rogue-clone-iii.ico` and `windows/rogue-icon.rc`. The `windows/windows-saved-games.ps1` script locates the Saved Games folder at build time. Check for required runtime DLLs before distributing the EXE to other PCs.
+To create a Windows binary distribution ZIP, run the following in MSYS2 UCRT64:
+
+```sh
+make dist.win
+```
+
+This rebuilds `rogue-c.exe` (standard defaults) and `rogue-c_original.exe` (original-style defaults), then packages both executables with `README_ja.txt`, `README_en.txt`, and `LICENSE.txt` as `rogue_clone-iii.jec.004_win.zip`. Both executables use the same default save and score filenames, `rogue-c.save` and `rogue-c.scores`. ZIP creation requires the `zip` utility; install it with `pacman -S --needed zip` if necessary.
+
+To change the distributed executable name, run `make dist.win DIST_WIN_PROGRAM=NAME`. The original-settings executable defaults to `NAME_original.exe`; the filenames in the packaged READMEs are updated accordingly. Use `DIST_WIN_NAME=NAME` to change the archive name.
+
+The Windows icon uses `windows/rogue-clone-iii.ico` and `windows/rogue-icon.rc`. The `windows/windows-saved-games.ps1` script locates the Saved Games folder at build time.
 
 For the game guide and other platform READMEs, see the [repository README](README.md).

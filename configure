@@ -188,6 +188,30 @@ if [ -z "$PROGRAM" ]; then
     echo "$progname: --program must not be empty" >&2
     exit 1
 fi
+# Expand a leading home-directory shorthand before writing config.mk.
+# Shell quoting prevents ordinary tilde expansion in --file-dir='~/...'.
+case "$FILEDIR" in
+    '~')
+        if [ -z "${HOME:-}" ]; then
+            echo "$progname: HOME is not set; cannot expand --file-dir=~" >&2
+            exit 1
+        fi
+        FILEDIR=$HOME
+        ;;
+    '~/'*)
+        if [ -z "${HOME:-}" ]; then
+            echo "$progname: HOME is not set; cannot expand --file-dir=$FILEDIR" >&2
+            exit 1
+        fi
+        FILEDIR=$HOME/${FILEDIR#'~/'}
+        ;;
+    '~'*)
+        echo "$progname: unsupported home-directory shorthand: $FILEDIR" >&2
+        echo "Use ~/path or an absolute path instead." >&2
+        exit 1
+        ;;
+esac
+
 if [ -n "$FILEDIR" ]; then
     case "$FILEDIR" in
         */) FILE_PREFIX=$FILEDIR ;;

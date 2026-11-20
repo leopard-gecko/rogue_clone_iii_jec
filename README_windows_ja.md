@@ -111,6 +111,16 @@ make FILEDIR='C:/Games/Rogue Clone III'
 
 ## 6. Windows版の配布
 
-Windows版のアイコンには `windows/rogue-clone-iii.ico` と `windows/rogue-icon.rc` を使用します。`windows/windows-saved-games.ps1` は「保存したゲーム」フォルダを取得するビルド用スクリプトです。EXEを別のPCに配布するときは、必要な実行時DLLも確認してください。
+Windows用のバイナリ配布ZIPを作成する場合は、MSYS2 UCRT64で次を実行します。
+
+```sh
+make dist.win
+```
+
+通常設定版 `rogue-c.exe` とオリジナル設定版 `rogue-c_original.exe` を作り直し、日英のバイナリ配布用README（`README_ja.txt`、`README_en.txt`）と `LICENSE.txt` を同梱した `rogue_clone-iii.jec.004_win.zip` を生成します。両EXEの既定のセーブ・スコアファイル名は `rogue-c.save`、`rogue-c.scores` で共通です。ZIPの作成には `zip` コマンドが必要です。未導入の場合は `pacman -S --needed zip` で追加できます。
+
+配布用の実行ファイル名を変更する場合は、`make dist.win DIST_WIN_PROGRAM=NAME` で指定できます。オリジナル設定版の名前は既定で `NAME_original.exe` となり、同梱README内のファイル名も連動します。ZIPの名前は `DIST_WIN_NAME=NAME` で変更できます。
+
+Windows版のアイコンには `windows/rogue-clone-iii.ico` と `windows/rogue-icon.rc` を使用します。`windows/windows-saved-games.ps1` は「保存したゲーム」フォルダを取得するビルド用スクリプトです。
 
 案内書と他のOS向けのREADMEは[リポジトリのREADME](README.md)から参照できます。

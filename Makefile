@@ -90,6 +90,22 @@ else
 ORIGINAL_DEFAULT_LANGUAGE := 2
 endif
 
+# Normalize quoted home-directory shorthand for direct make FILEDIR=... use.
+# Only ~ and ~/... are supported; ~username is intentionally rejected.
+ifeq ($(FILEDIR),~)
+ifeq ($(strip $(HOME)),)
+$(error HOME is not set; cannot expand FILEDIR=~)
+endif
+override FILEDIR := $(HOME)
+else ifneq ($(filter ~/%,$(FILEDIR)),)
+ifeq ($(strip $(HOME)),)
+$(error HOME is not set; cannot expand FILEDIR=$(FILEDIR))
+endif
+override FILEDIR := $(HOME)/$(patsubst ~/%,%,$(FILEDIR))
+else ifneq ($(filter ~%,$(FILEDIR)),)
+$(error Unsupported FILEDIR shorthand $(FILEDIR); use ~/path or an absolute path)
+endif
+
 ifneq ($(strip $(FILEDIR)),)
 SAVEFILE ?= $(FILEDIR)/$(PROGRAM).save
 SCOREFILE ?= $(FILEDIR)/$(PROGRAM).scores
@@ -181,11 +197,12 @@ DIST_CFILES = $(sort $(SRCS) windows/machdep_win.c \
     windows/rogue_windows.c windows/rogue_windows_console.c)
 DIST_HEADERS = rogue.h jec/color.h jec/rogue_i18n.h jec/unicode_text.h \
     windows/rogue_windows.h windows/rogue_windows_console.h
-DIST_SUPPORT = Makefile Makefile.win configure LICENSE.txt \
+DIST_SUPPORT = Makefile Makefile.win configure LICENSE.txt README.md \
     README_mac_linux_ja.md README_mac_linux_en.md \
     README_windows_ja.md README_windows_en.md \
     windows/rogue-icon.rc windows/rogue-clone-iii.ico \
-    windows/windows-saved-games.ps1
+    windows/windows-saved-games.ps1 \
+    windows/README_binary_ja.txt windows/README_binary_en.txt
 DIST_FILES = $(sort $(DIST_CFILES) $(DIST_HEADERS) $(DIST_SUPPORT))
 
 # Do not run clean here: building a source archive must never touch local game
