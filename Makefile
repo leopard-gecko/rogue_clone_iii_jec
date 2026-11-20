@@ -90,6 +90,22 @@ else
 ORIGINAL_DEFAULT_LANGUAGE := 2
 endif
 
+# Normalize quoted home-directory shorthand for direct make FILEDIR=... use.
+# Only ~ and ~/... are supported; ~username is intentionally rejected.
+ifeq ($(FILEDIR),~)
+ifeq ($(strip $(HOME)),)
+$(error HOME is not set; cannot expand FILEDIR=~)
+endif
+override FILEDIR := $(HOME)
+else ifneq ($(filter ~/%,$(FILEDIR)),)
+ifeq ($(strip $(HOME)),)
+$(error HOME is not set; cannot expand FILEDIR=$(FILEDIR))
+endif
+override FILEDIR := $(HOME)/$(patsubst ~/%,%,$(FILEDIR))
+else ifneq ($(filter ~%,$(FILEDIR)),)
+$(error Unsupported FILEDIR shorthand $(FILEDIR); use ~/path or an absolute path)
+endif
+
 ifneq ($(strip $(FILEDIR)),)
 SAVEFILE ?= $(FILEDIR)/$(PROGRAM).save
 SCOREFILE ?= $(FILEDIR)/$(PROGRAM).scores
