@@ -763,6 +763,17 @@ void zapp(void);
 /* Windows-only interfaces, kept in their own headers as in Rogue 5.4.5. */
 #include "windows/rogue_windows.h"
 #include "windows/rogue_windows_console.h"
+/* The PDCurses VT backend temporarily moves the physical cursor during
+ * screen updates.  Hide it only for the duration of each Windows refresh;
+ * the wrapper respects the game's current cursor visibility option. */
+#ifdef refresh
+#undef refresh
+#endif
+#ifdef wrefresh
+#undef wrefresh
+#endif
+#define refresh() rogue_win_refresh(stdscr)
+#define wrefresh(win) rogue_win_refresh((win))
 /* Preserve the original UTF-8 file and key-reading hooks. */
 #define fopen rogue_win_fopen
 #define getchar rogue_win_getchar

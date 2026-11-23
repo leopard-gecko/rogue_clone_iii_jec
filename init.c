@@ -237,6 +237,11 @@ void start_window(void)
 	nonl();
 #endif
 	md_control_keybord(0);
+#ifdef _WIN32
+	/* Reapply after initscr() or reset_prog_mode() (shell return). */
+	rogue_win_cursor_invalidate();
+	rogue_show_cursor(show_cursor);
+#endif
 }
 
 void stop_window(void)
@@ -259,6 +264,12 @@ void stop_window(void)
 	nocbreak();
 	reset_shell_mode();
 	endwin();
+#ifdef _WIN32
+	/* PDCursesMod's VT PDC_scr_close() forces a blinking block cursor.
+	 * VT has already been disabled by endwin(), so temporarily enable it
+	 * only to reset the terminal's cursor shape to its configured default. */
+	rogue_win_cursor_restore_default();
+#endif
 	rogue_restore_terminal_colors();
 	/* Last-resort exact restore of the tty state captured before initscr(). */
 	md_restore_tty();

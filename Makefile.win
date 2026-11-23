@@ -24,7 +24,7 @@ SCOREFILE ?=
 # End-user Windows ZIP; defaults match the published Clone III executable names.
 # The ZIP contains a fixed top-level folder named "Rogue Clone III".
 # Override these variables to package a separately named edition.
-DIST_WIN_NAME ?= rogue_clone-iii.jec.004_win
+DIST_WIN_NAME ?= rogue_clone-iii.jec.005_win
 DIST_WIN_PROGRAM ?= rogue-c
 DIST_WIN_ORIGINAL ?= $(DIST_WIN_PROGRAM)_original
 DIST_WIN_SAVEFILE ?= $(DIST_WIN_PROGRAM).save

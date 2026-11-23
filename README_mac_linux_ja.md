@@ -1,4 +1,4 @@
-# Rogue Clone III JEC 004 — macOS / Linux（日本語）
+# Rogue Clone III JEC 005 — macOS / Linux（日本語）
 
 この文書では、**macOS・Linux・Raspberry Pi OS**でのビルド・起動・インストール・保存先を説明します。ゲームの紹介とJEC版の変更点は[リポジトリのREADME](README.md)、操作やアイテムの説明は[「【運命の洞窟】への案内書」](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3)をご覧ください。
 
@@ -101,6 +101,6 @@ make
 
 ## 6. ソース配布
 
-ソース配布用アーカイブは `make dist.src` で作成できます。既定では親ディレクトリに `rogue-clone-iii-004-src.tar.gz` を出力します。
+ソース配布用アーカイブは `make dist.src` で作成できます。既定では親ディレクトリに `rogue-clone-iii-005-src.tar.gz` を出力します。
 
 案内書と他のOS向けのREADMEは[リポジトリのREADME](README.md)から参照できます。

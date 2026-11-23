@@ -1,4 +1,4 @@
-﻿Rogue Clone III JEC 004  Windows版
+﻿Rogue Clone III JEC 005  Windows版
 ===================================
 
 Rogueは1980年頃に誕生した、文字や記号で描かれる迷宮を探索する
@@ -11,7 +11,7 @@ Rogue Clone IIIは、Rogueをもとに作られたクローン系統の最終版
 冒険を楽しめるのが特徴です。
 
 このパッケージは、Windows 10 / 11（64ビット）向けの
-Rogue Clone III JEC 004です。元のClone IIIのゲーム内容を基本的に
+Rogue Clone III JEC 005です。元のClone IIIのゲーム内容を基本的に
 引き継ぎ、日本語・英語の切り替え、日本語や絵文字の入力、カラー表示、
 操作オプション、現代のWindowsへの対応などを加えています。
 

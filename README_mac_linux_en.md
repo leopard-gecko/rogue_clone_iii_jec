@@ -1,4 +1,4 @@
-# Rogue Clone III JEC 004 — macOS / Linux (English)
+# Rogue Clone III JEC 005 — macOS / Linux (English)
 
 This document explains building, launching, installing, and file locations on **macOS, Linux, and Raspberry Pi OS**. For the game overview and JEC changes, see the [repository README](README.md); for game commands and items, see the [Dungeon Guide](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3).
 
@@ -100,6 +100,6 @@ Use `--program=NAME` to rename the executable, or `--save-file=FILE` or `--score
 
 ## 6. Source distribution
 
-Create a source archive with `make dist.src`. By default it creates `rogue-clone-iii-004-src.tar.gz` in the parent directory.
+Create a source archive with `make dist.src`. By default it creates `rogue-clone-iii-005-src.tar.gz` in the parent directory.
 
 For the game guide and other platform READMEs, see the [repository README](README.md).

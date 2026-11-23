@@ -396,6 +396,180 @@ static int rogue_vt_write(HANDLE output, const char *s, size_t n)
            written == (DWORD)n;
 }
 
+/* Screen-refresh cursor tracking, independent of the option default.
+ * Messages and input prompts may temporarily show the cursor even when
+ * the gameplay cursor option is disabled.  An invalid state forces curses
+ * to reapply visibility after initscr() or a shell round-trip. */
+static int rogue_cursor_visible = 1;
+static int rogue_cursor_known = 0;
+
+/* Keep all cursor VT controls in one place.  Visibility and shape are
+ * separate: CSI 0 SP q only restores the terminal's preferred shape. */
+static const char rogue_cursor_hide_seq[] = "\033[?25l";
+static const char rogue_cursor_show_seq[] = "\033[?25h";
+static const char rogue_cursor_shape_seq[] = "\033[0 q";
+
+/* Some Windows Terminal launches expose a real console, while mintty
+ * uses a pipe.  Do not emit cursor-control sequences into redirected
+ * files; a VT-looking TERM is required for the pipe case. */
+struct rogue_cursor_output {
+    HANDLE handle;
+    DWORD saved_mode;
+    int restore_mode;
+};
+
+static int rogue_cursor_open_output(struct rogue_cursor_output *ctx)
+{
+    DWORD mode;
+    const char *term;
+    HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    ctx->handle = output;
+    ctx->restore_mode = 0;
+    ctx->saved_mode = 0;
+    if (output == NULL || output == INVALID_HANDLE_VALUE)
+        return 0;
+    if (GetConsoleMode(output, &mode)) {
+        if (!(mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING)) {
+            if (!SetConsoleMode(output,
+                                mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+                return 0;
+            ctx->saved_mode = mode;
+            ctx->restore_mode = 1;
+        }
+        return 1;
+    }
+    term = getenv("TERM");
+    return GetFileType(output) == FILE_TYPE_PIPE && term != NULL &&
+           (strstr(term, "xterm") || strstr(term, "mintty") ||
+            strstr(term, "screen") || strstr(term, "tmux"));
+}
+
+static void rogue_cursor_close_output(struct rogue_cursor_output *ctx)
+{
+    if (ctx->restore_mode)
+        (void)SetConsoleMode(ctx->handle, ctx->saved_mode);
+}
+
+/* PDCurses and its VT renderer write through CRT stdout.  Flush before
+ * writing cursor controls via Win32, preserving the intended order in
+ * Console Host and ConPTY.  open_output handles VT mode for the console
+ * and rejects redirected output; it restores the prior mode afterward. */
+static void rogue_cursor_send(const char *sequence, size_t length)
+{
+    struct rogue_cursor_output ctx;
+
+    fflush(stdout);
+    if (rogue_cursor_open_output(&ctx)) {
+        (void)rogue_vt_write(ctx.handle, sequence, length);
+        rogue_cursor_close_output(&ctx);
+    }
+}
+
+/* PDCursesMod chooses its own cursor shape when curs_set() is called.
+ * Request the terminal profile's default; no reliable cursor-shape query
+ * exists across all supported Windows terminal frontends. */
+static void rogue_cursor_default_shape(void)
+{
+    rogue_cursor_send(rogue_cursor_shape_seq,
+                      sizeof rogue_cursor_shape_seq - 1);
+}
+
+/* The game's recorded curses visibility and the terminal's real state
+ * can differ after the first alternate-screen paint.  Repeating the
+ * physical hide is harmless and avoids the startup cursor regression. */
+static void rogue_cursor_hide_physical(void)
+{
+    rogue_cursor_send(rogue_cursor_hide_seq,
+                      sizeof rogue_cursor_hide_seq - 1);
+}
+
+void rogue_win_cursor_invalidate(void)
+{
+    rogue_cursor_known = 0;
+}
+
+void rogue_win_cursor_set_visible(int visible)
+{
+    visible = (visible != 0);
+    if (!rogue_cursor_known || visible != rogue_cursor_visible) {
+        /* PDCursesMod maps curs_set(1) to an underline cursor.  Use its
+         * block shape (2) as a fallback for terminals that do not support
+         * DECSCUSR; then request the terminal profile's default shape.
+         * This keeps curses' internal cursor visibility/position in sync. */
+        (void)curs_set(visible ? 2 : 0);
+        rogue_cursor_visible = visible;
+        rogue_cursor_known = 1;
+        if (visible)
+            rogue_cursor_default_shape();
+    }
+    /* Even if curses already records "hidden", a later VT screen switch
+     * or refresh may have made the terminal cursor visible.  The startup
+     * path must not rely on the cached request. */
+    if (!visible)
+        rogue_cursor_hide_physical();
+}
+
+void rogue_win_cursor_restore_default(void)
+{
+    /* endwin() forces a block cursor and can disable VT processing.
+     * Restore the terminal-default shape without persisting VT mode. */
+    rogue_cursor_default_shape();
+    rogue_win_cursor_invalidate();
+}
+
+int rogue_win_refresh(WINDOW *win)
+{
+    struct rogue_cursor_output ctx = { INVALID_HANDLE_VALUE, 0, 0 };
+    int opened = 0;
+    int masked = 0;
+    int result;
+
+    /* Rogue 3.6 JEC: suppress physical cursor movement while PDCursesMod
+     * paints, without changing curses' internal visibility or coordinates.
+     * This must also respect an explicitly hidden gameplay cursor. */
+    if (rogue_cursor_visible) {
+        fflush(stdout);
+        opened = rogue_cursor_open_output(&ctx);
+        if (opened)
+            masked = rogue_vt_write(ctx.handle, rogue_cursor_hide_seq,
+                                    sizeof rogue_cursor_hide_seq - 1);
+    }
+    /* Parenthesized function name bypasses the Windows-only wrefresh macro. */
+    result = (wrefresh)(win);
+    if (result != ERR) {
+        /* PDCursesMod's init_color() sets SP->dirty.  The first key-input
+         * wait would otherwise call napms(), perform another repaint and
+         * call curs_set() AFTER our final cursor-hide/shape restoration.
+         * Drain that deferred update here, before restoring visibility.
+         * napms(0) performs no sleep and is a no-op once dirty is clear.
+         * This matters primarily for the initial colored (normal) build;
+         * the original build does not initialize the color palette. */
+        (void)napms(0);
+    }
+    if (opened && rogue_cursor_visible) {
+        /* A later curses refresh can reset the physical cursor style even
+         * when the requested visibility did not change.  Reassert the
+         * terminal's profile default after EACH redraw, before unmasking.
+         * Without this, curs_set()'s underline can persist during play. */
+        fflush(stdout);
+        (void)rogue_vt_write(ctx.handle, rogue_cursor_shape_seq,
+                             sizeof rogue_cursor_shape_seq - 1);
+        if (masked)
+            (void)rogue_vt_write(ctx.handle, rogue_cursor_show_seq,
+                                 sizeof rogue_cursor_show_seq - 1);
+    }
+    if (opened)
+        rogue_cursor_close_output(&ctx);
+    /* The initial dungeon paint can take place after curses has already
+     * accepted curs_set(0).  Explicitly hide again *after* PDCursesMod has
+     * finished writing, before the first command is read.  Keep the
+     * visible-cursor path (make original) and its flicker mask unchanged. */
+    if (!rogue_cursor_visible)
+        rogue_cursor_hide_physical();
+    return result;
+}
+
 /* The console's VT parser decodes byte writes using its output code page.
  * A successful WriteFile is not evidence that the bytes were decoded as
  * UTF-8.  PDCurses may have restored a non-UTF-8 page during init. */
@@ -412,7 +586,10 @@ void rogue_win_vt_restore_nonbmp_rows(int max_rows)
     HANDLE output;
     DWORD mode;
     int rows, cols, row, col, saved = 0;
+    int prior_row, prior_col;
     int is_console = 0;
+    int cursor_opened = 0, cursor_masked = 0;
+    struct rogue_cursor_output cursor_ctx = { INVALID_HANDLE_VALUE, 0, 0 };
     char seq[96];
 
     if (!stdscr || max_rows <= 0)
@@ -436,6 +613,12 @@ void rogue_win_vt_restore_nonbmp_rows(int max_rows)
     }
     if (!rogue_vt_ensure_utf8(is_console)) return;
 
+    /* mvwinch() moves stdscr's logical cursor before reading a cell.
+     * Without saving this position, the scan below leaves the cursor near
+     * the right edge.  A later wgetch()/refresh then moves the visible
+     * cursor there, even when no emoji needed repainting.  DECSC/DECRC
+     * only save and restore the *terminal* cursor, not this curses state. */
+    getyx(stdscr, prior_row, prior_col);
     getmaxyx(stdscr, rows, cols);
     if (rows > max_rows) rows = max_rows;
     if (cols > COLS) cols = COLS;
@@ -447,7 +630,18 @@ void rogue_win_vt_restore_nonbmp_rows(int max_rows)
             if (!rogue_needs_vt_repaint(cp))
                 continue;
             if (!saved) {
-                if (!rogue_vt_write(output, "\0337", 2)) return;
+                /* A supplementary-plane repaint also moves the physical
+                 * cursor temporarily.  Mask it exactly as during wrefresh. */
+                if (rogue_cursor_visible) {
+                    fflush(stdout);
+                    cursor_opened = rogue_cursor_open_output(&cursor_ctx);
+                    if (cursor_opened)
+                        cursor_masked = rogue_vt_write(cursor_ctx.handle,
+                                                       rogue_cursor_hide_seq,
+                                                       sizeof rogue_cursor_hide_seq - 1);
+                }
+                if (!rogue_vt_write(output, "\0337", 2))
+                    goto repaint_done;
                 saved = 1;
             }
             if (cp <= 0x7ffU) {
@@ -482,6 +676,23 @@ void rogue_win_vt_restore_nonbmp_rows(int max_rows)
         }
     }
     if (saved) (void)rogue_vt_write(output, "\0338", 2);
+repaint_done:
+    /* Restore the caller's curses position on every exit from the scan.
+     * The physical VT cursor was restored by DECRC above, if repainted. */
+    (void)wmove(stdscr, prior_row, prior_col);
+    if (cursor_masked) {
+        fflush(stdout);
+        (void)rogue_vt_write(cursor_ctx.handle, rogue_cursor_shape_seq,
+                             sizeof rogue_cursor_shape_seq - 1);
+        (void)rogue_vt_write(cursor_ctx.handle, rogue_cursor_show_seq,
+                             sizeof rogue_cursor_show_seq - 1);
+    }
+    if (cursor_opened)
+        rogue_cursor_close_output(&cursor_ctx);
+    /* DECRC may restore the saved physical visibility as well as position.
+     * Preserve the gameplay's hidden-cursor setting after emoji repaint. */
+    if (saved && !rogue_cursor_visible)
+        rogue_cursor_hide_physical();
 }
 
 /* On Windows, ENABLE_PROCESSED_INPUT turns Ctrl-C into a console

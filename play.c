@@ -183,7 +183,7 @@ CH:
 			throw();
 			break;
 		case 'v':
-			message("rogue-clone: Version III. (Tim Stoehr was here), tektronix!zeus!tims", 0);
+			message("rogue-clone: Version III. (Tim Stoehr was here), tektronix!zeus!tims [JEC 005]", 0);
 			break;
 		case 'Q':
 			quit(0);

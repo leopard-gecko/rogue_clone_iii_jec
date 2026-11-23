@@ -139,7 +139,9 @@ char *md_gln(void)
 }
 void md_sleep(int n) { if (n > 0) Sleep((DWORD)n * 1000); }
 void rogue_delay(void) { Sleep(24); }
-void rogue_show_cursor(boolean show) { (void)curs_set(show ? 1 : 0); }
+/* Preserve the terminal's configured cursor shape, unlike curs_set(1)'s
+ * PDCurses VT default (underline), and avoid redundant show/hide writes. */
+void rogue_show_cursor(boolean show) { rogue_win_cursor_set_visible(show != 0); }
 
 /* The Windows C runtime's narrow getenv() uses the active ANSI code
  * page and can corrupt Unicode ROGUEOPTS, including Japanese and emoji.

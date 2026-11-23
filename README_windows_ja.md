@@ -1,4 +1,4 @@
-# Rogue Clone III JEC 004 — Windows（日本語）
+# Rogue Clone III JEC 005 — Windows（日本語）
 
 この文書では、**Windows 10 / 11**でのビルド・起動・環境変数・保存先を説明します。ゲームの紹介とJEC版の変更点は[リポジトリのREADME](README.md)、操作やアイテムの説明は[「【運命の洞窟】への案内書」](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3)をご覧ください。
 
@@ -117,7 +117,7 @@ Windows用のバイナリ配布ZIPを作成する場合は、MSYS2 UCRT64で次�
 make dist.win
 ```
 
-通常設定版 `rogue-c.exe` とオリジナル設定版 `rogue-c_original.exe` を作り直し、日英のバイナリ配布用README（`README_ja.txt`、`README_en.txt`）と `LICENSE.txt` を同梱した `rogue_clone-iii.jec.004_win.zip` を生成します。両EXEの既定のセーブ・スコアファイル名は `rogue-c.save`、`rogue-c.scores` で共通です。ZIPの作成には `zip` コマンドが必要です。未導入の場合は `pacman -S --needed zip` で追加できます。
+通常設定版 `rogue-c.exe` とオリジナル設定版 `rogue-c_original.exe` を作り直し、日英のバイナリ配布用README（`README_ja.txt`、`README_en.txt`）と `LICENSE.txt` を同梱した `rogue_clone-iii.jec.005_win.zip` を生成します。両EXEの既定のセーブ・スコアファイル名は `rogue-c.save`、`rogue-c.scores` で共通です。ZIPの作成には `zip` コマンドが必要です。未導入の場合は `pacman -S --needed zip` で追加できます。
 
 配布用の実行ファイル名を変更する場合は、`make dist.win DIST_WIN_PROGRAM=NAME` で指定できます。オリジナル設定版の名前は既定で `NAME_original.exe` となり、同梱README内のファイル名も連動します。ZIPの名前は `DIST_WIN_NAME=NAME` で変更できます。
 

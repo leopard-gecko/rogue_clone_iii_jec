@@ -50,6 +50,18 @@ void message(char *msg, boolean intrpt)
 
 	if (!msg_cleared) {
 		mvaddstr(MIN_ROW-1, msg_col, more);
+#ifdef _WIN32
+		/* PDCursesMod's UTF-8 rendering may leave its logical cursor at
+		 * a different position from the number of terminal cells printed.
+		 * Put the input cursor after the More prompt explicitly; otherwise
+		 * it can appear at the extreme right edge of the message row. */
+		{
+			int after_more = msg_col + jrogue_text_width(more);
+			if (after_more >= DCOLS - 1)
+				after_more = DCOLS - 2;
+			move(MIN_ROW - 1, after_more);
+		}
+#endif
 		refresh_message_text();
 		wait_for_ack();
 		check_message();
@@ -64,9 +76,16 @@ void message(char *msg, boolean intrpt)
 	refresh_message_text();
 	msg_cleared = 0;
 	msg_col = jrogue_text_width(msg);
+#ifdef _WIN32
+	/* Leave a free cell to the right of the More acknowledgement cursor.
+	 * The final terminal column can wrap/scroll on some VT hosts. */
+	if (msg_col > DCOLS - jrogue_text_width(more) - 2)
+		msg_col = DCOLS - jrogue_text_width(more) - 2;
+#else
 	if (msg_col > (DCOLS - jrogue_text_width(more) - 1)) {
 		msg_col = DCOLS - jrogue_text_width(more) - 1;
 	}
+#endif
 
 	cant_int = 0;
 

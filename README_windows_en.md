@@ -1,4 +1,4 @@
-# Rogue Clone III JEC 004 — Windows (English)
+# Rogue Clone III JEC 005 — Windows (English)
 
 This document explains building, launching, environment variables, and file locations on **Windows 10 / 11**. For the game overview and JEC changes, see the [repository README](README.md); for game commands and items, see the [Dungeon Guide](https://leopard-gecko.github.io/jrogue/guide.html?version=clone3).
 
@@ -117,7 +117,7 @@ To create a Windows binary distribution ZIP, run the following in MSYS2 UCRT64:
 make dist.win
 ```
 
-This rebuilds `rogue-c.exe` (standard defaults) and `rogue-c_original.exe` (original-style defaults), then packages both executables with `README_ja.txt`, `README_en.txt`, and `LICENSE.txt` as `rogue_clone-iii.jec.004_win.zip`. Both executables use the same default save and score filenames, `rogue-c.save` and `rogue-c.scores`. ZIP creation requires the `zip` utility; install it with `pacman -S --needed zip` if necessary.
+This rebuilds `rogue-c.exe` (standard defaults) and `rogue-c_original.exe` (original-style defaults), then packages both executables with `README_ja.txt`, `README_en.txt`, and `LICENSE.txt` as `rogue_clone-iii.jec.005_win.zip`. Both executables use the same default save and score filenames, `rogue-c.save` and `rogue-c.scores`. ZIP creation requires the `zip` utility; install it with `pacman -S --needed zip` if necessary.
 
 To change the distributed executable name, run `make dist.win DIST_WIN_PROGRAM=NAME`. The original-settings executable defaults to `NAME_original.exe`; the filenames in the packaged READMEs are updated accordingly. Use `DIST_WIN_NAME=NAME` to change the archive name.
 

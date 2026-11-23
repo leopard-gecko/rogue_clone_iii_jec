@@ -1,4 +1,4 @@
-Rogue Clone III JEC 004  Windows Edition
+Rogue Clone III JEC 005  Windows Edition
 ==========================================
 
 Rogue is a computer role-playing game that originated around 1980. You
@@ -10,7 +10,7 @@ Compared with the original Rogue 5.4 line, it has no dark rooms, and
 scrolls and potions are automatically identified after use. These
 simpler mechanics make the game straightforward and fast-paced.
 
-This package contains Rogue Clone III JEC 004 for Windows 10 / 11
+This package contains Rogue Clone III JEC 005 for Windows 10 / 11
 (64-bit). It preserves the basic gameplay of Clone III while adding
 Japanese/English language switching, Unicode and emoji input, color
 display, control options, and compatibility with modern Windows systems.
