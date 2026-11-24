@@ -2,11 +2,17 @@
 
 **Rogue Clone III JEC 005**
 
-Rogueは、1980年頃に誕生した、文字や記号で描かれた迷宮を探索するコンピューターRPGです。プレイヤーは怪物と戦い、さまざまな道具を使いながら、迷宮の奥に隠された「イェンダーの魔除け」を探します。Rogue Clone IIIは、Rogueをもとに独自に発展したクローン版の最終バージョンです。Rogue 5.4と比べると、暗い部屋がなく、巻き物や水薬が使用後に基本的に自動識別されるなどの違いがあります。
+Rogueは、1980年頃に誕生した、文字や記号で描かれた迷宮を探索するコンピューターRPGです。プレイヤーは怪物と戦い、さまざまな道具を使いながら、迷宮の奥に隠された「イェンダーの魔除け」を探します。
 
-**Rogue Clone III JEC** は、元のRogue Clone IIIのゲーム内容はそのままに、日本語・英語の切り替え、カラー表示、現代のOSへの対応、不具合修正などを加えた修正版です。
+**Rogue Clone III**は、Rogueをもとに独自に発展したクローン版の最終バージョンです。Rogue 5.4と比べると、暗い部屋がなく、巻き物や水薬が使用後に基本的に自動識別されるなどの違いがあります。
 
-*Rogue Clone III JEC is a modified edition of Rogue Clone III. It retains the original game's fundamental gameplay while adding Japanese/English language switching, color display, support for modern operating systems, and bug fixes.*
+ここで配布する**Rogue Clone III JEC** は、Rogue Clone IIIのソースコードに日本語・英語の切り替え、カラー表示、現代のOSへの対応、不具合修正などを加えた修正版です。ゲームの内容はRogue Clone IIIそのものです。
+
+*Rogue is a computer role-playing game that originated around 1980. Players explore a dungeon depicted with characters and symbols, fighting monsters and using various items as they search for the Amulet of Yendor hidden deep within the dungeon.*
+
+*Rogue Clone III is the final version of a line of Rogue clones that developed independently from Rogue. Compared with Rogue 5.4, it has no dark rooms, and scrolls and potions are generally identified automatically after use.*
+
+*Rogue Clone III JEC, distributed here, is a modified version of the Rogue Clone III source code that adds Japanese/English language switching, color display, support for modern operating systems, bug fixes, and more. The gameplay remains that of Rogue Clone III itself.*
 
 ## 対応環境とREADME / Platforms and documentation
 
